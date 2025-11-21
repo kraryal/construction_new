@@ -1,0 +1,20 @@
+# Create a verification file in the static folder
+with open('static/css_test.html', 'w') as f:
+    f.write('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>CSS Test</title>
+        <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+        <h1>If this text is styled, CSS is working</h1>
+    </body>
+    </html>
+    ''')
+```
+
+Then verify the proper path by checking:
+```
+http://your-flask-server/static/css_test.html
+

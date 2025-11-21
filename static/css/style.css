@@ -1,0 +1,411 @@
+/* static/css/style.css */
+/* Replace the color variables in style.css */
+:root {
+    --primary: #673AB7;
+    --primary-dark: #512DA8;
+    --primary-light: #D1C4E9;
+    --accent: #FFC107;
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --divider: #BDBDBD;
+    --success: #4CAF50;
+    --info: #2196F3;
+    --warning: #FF9800;
+    --danger: #F44336;
+    --background: #F3F0FF; /* Light purple background */
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--background);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 0;
+}
+
+/* Add more styling for cards */
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+    background-color: white;
+}
+
+/* Team member styling */
+.team-member {
+    padding: 1rem;
+    text-align: center;
+}
+
+.team-avatar {
+    font-size: 3rem;
+    color: var(--primary);
+    background-color: var(--primary-light);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.navbar-brand {
+    font-weight: 500;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 1rem;
+    color: var(--primary-dark);
+}
+
+h1 {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--divider);
+}
+
+.card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.feature-icon {
+    font-size: 2rem;
+    color: var(--primary);
+}
+
+.team-avatar {
+    font-size: 3rem;
+    color: var(--primary);
+}
+
+.footer {
+    background-color: #f5f5f5;
+    padding: 1rem 0;
+    border-top: 1px solid var(--divider);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* EDA Page */
+.stat-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    height: 100%;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card h3 {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.viz-img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Model Comparison Page */
+.current-model-banner {
+    background-color: #E3F2FD;
+    color: #0D47A1;
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.table-dark {
+    background-color: var(--primary-dark);
+}
+
+.current-model {
+    background-color: #E8F5E9 !important;
+}
+
+.future-model {
+    background-color: #F1F8E9 !important;
+}
+
+.achievement-banner {
+    background-color: #E8F5E9;
+    color: var(--success);
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.metric-chart {
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dashboard */
+.metric-cards {
+    margin-top: 1.5rem;
+}
+
+.metric-card {
+    text-align: center;
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.metric-label {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
+.success-card {
+    background-color: #E8F5E9;
+    border-left: 5px solid var(--success);
+}
+
+/* Cost Estimator */
+.info-note {
+    background-color: #FFF8E1;
+    padding: 1rem;
+    border-radius: 4px;
+    border-left: 4px solid var(--warning);
+}
+
+.result-card {
+    background-color: #E8F5E9;
+    border-left: 5px solid var(--success);
+}
+
+.estimate-value {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.confidence-interval {
+    font-size: 1.1rem;
+}
+
+.range-values {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+}
+
+.range-min, .range-max {
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+.range-separator {
+    color: var(--text-secondary);
+}
+
+/* Documentation */
+.endpoint-info, .request-format, .response-format {
+    background-color: #FAFAFA;
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+pre {
+    background-color: #263238;
+    color: #ECEFF1;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+code {
+    font-family: 'Roboto Mono', monospace;
+}
+
+.report-actions {
+    margin-top: 1.5rem;
+}
+
+.model-metrics {
+    margin-top: 1.5rem;
+}
+
+.metric h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.current-mape {
+    color: var(--success);
+    font-weight: 600;
+}
+
+/* Schema */
+.schema-img {
+    max-width: 100%;
+    border: 1px solid var(--divider);
+    border-radius: 4px;
+}
+
+/* Error page */
+.error-container {
+    margin: 5rem auto;
+    max-width: 600px;
+}
+
+.error-card {
+    border-left: 5px solid var(--danger);
+}
+
+/* Add to style.css or the inline style block */
+.row {
+    margin-bottom: 20px;
+}
+
+h1, h2, h3 {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Ensure visualizations have proper spacing */
+.viz-container {
+    margin-bottom: 30px;
+}
+
+/* Ensure table is responsive */
+.table-responsive {
+    overflow-x: auto;
+}
+
+/* Home page team styling */
+.team-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #673AB7, #9c27b0);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Add hover effect */
+.team-circle:hover {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+/* Male icon styling */
+.icon-male {
+    background: linear-gradient(45deg, #2196F3, #3F51B5);
+}
+
+/* Female icon styling */
+.icon-female {
+    background: linear-gradient(45deg, #E91E63, #9C27B0);
+}
+
+<style>
+    /* Team member styling */
+    .team-avatar {
+        width: 90px;
+        height: 90px;
+        background: linear-gradient(135deg, #673AB7, #9C27B0);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .team-avatar:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    
+    .team-avatar i {
+        font-size: 40px;
+        color: white;
+    }
+    
+    /* Female-specific styling */
+    .female-avatar {
+        background: linear-gradient(135deg, #E91E63, #9C27B0);
+    }
+    
+    /* Make sure Bootstrap Icons are included */
+    @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css");
+
+    /* Center-aligned parameter list styling */
+.parameter-list {
+    display: inline-block;
+    text-align: left;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.note-box {
+    display: inline-block;
+    background-color: #e3f2fd;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border-left: 4px solid #2196f3;
+    max-width: 600px;
+    margin: 0 auto;
+}
+/* Center-aligned parameter list styling */
+.parameter-list {
+    display: inline-block;
+    text-align: left;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.note-box {
+    display: inline-block;
+    background-color: #e3f2fd;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border-left: 4px solid #2196f3;
+    max-width: 600px;
+    margin: 0 auto;
+}
+</style>

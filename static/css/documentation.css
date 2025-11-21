@@ -1,0 +1,56 @@
+/* Documentation page styling */
+pre {
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+code {
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.card-header h2 {
+    font-size: 1.5rem;
+}
+
+.endpoint-info code {
+    font-size: 1.1rem;
+    border-radius: 4px;
+}
+
+.table {
+    font-size: 0.9rem;
+}
+
+.alert {
+    font-size: 0.9rem;
+}
+
+.report-btn {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.6rem 1.6rem;
+    border-radius: 999px;              /* pill shape */
+    background-color: var(--primary);  /* same as your top bar */
+    border: 1px solid var(--primary);
+    color: #ffffff !important;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    text-decoration: none;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18);
+    transition: transform 0.1s ease, box-shadow 0.1s ease,
+                background-color 0.1s ease;
+}
+
+.report-btn:hover,
+.report-btn:focus {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+    color: #ffffff !important;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+
+/* Add more custom styles as needed */
