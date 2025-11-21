@@ -1,0 +1,115 @@
+<!-- templates/model_comparison.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Model Performance Comparison</h1>
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Model Comparison</li>
+{% endblock %}
+
+<!-- Current Deployed Model section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h2>Current Deployed Model</h2>
+        <div class="current-model-banner">
+            <strong>Random Forest with MAPE of 21.97%</strong> (Meets the 25% target requirement)
+        </div>
+    </div>
+</div>
+
+<!-- Model Comparison Table -->
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Model</th>
+            <th>CV MAPE (%)</th>
+            <th>Train MAPE (%)</th>
+            <th>Test MAPE (%)</th>
+            <th>Test RMSE ($)</th>
+            <th>Test R² Score</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="current-model">
+            <td>Random Forest (Current)</td>
+            <td>23.30</td>
+            <td>14.03</td>
+            <td>21.97</td>
+            <td>$271,543.90</td>
+            <td>0.9463</td>
+            <td><span class="badge bg-success">Meets Target</span></td>
+        </tr>
+        <tr>
+            <td>Gradient Boosting</td>
+            <td>42.48</td>
+            <td>42.05</td>
+            <td>43.75</td>
+            <td>$367,737.30</td>
+            <td>0.9015</td>
+            <td><span class="badge bg-danger">Above Target</span></td>
+        </tr>
+        <tr>
+            <td>XGBoost</td>
+            <td>36.16</td>
+            <td>33.47</td>
+            <td>36.37</td>
+            <td>$319,317.31</td>
+            <td>0.9258</td>
+            <td><span class="badge bg-danger">Above Target</span></td>
+        </tr>
+        <tr>
+            <td>LightGBM</td>
+            <td>36.93</td>
+            <td>34.80</td>
+            <td>37.62</td>
+            <td>$324,736.10</td>
+            <td>0.9232</td>
+            <td><span class="badge bg-danger">Above Target</span></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2>Performance Metrics Comparison</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="metric-chart">
+                    <h4 class="text-center">MAPE Comparison (lower is better)</h4>
+                    <div class="text-center">
+                        <img src="{{ url_for('static', filename='images/model_comparison_mape.png') }}" 
+                             alt="MAPE Comparison" class="img-fluid viz-img">
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="metric-chart">
+                    <h4 class="text-center">R² Comparison (higher is better)</h4>
+                    <div class="text-center">
+                        <img src="{{ url_for('static', filename='images/model_comparison_r2.png') }}" 
+                             alt="R² Comparison" class="img-fluid viz-img">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2>Model Development Journey</h2>
+        <ul>
+            <li><strong>Phase 1 - Baseline:</strong> Linear Regression exploratory models</li>
+            <li><strong>Phase 2 - Tree-Based Methods:</strong> Random Forest achieved 21.97% MAPE (Current Model)</li>
+            <li><strong>Phase 3 - Gradient Boosting:</strong> XGBoost, LightGBM, and Gradient Boosting were tested but underperformed</li>
+            <li><strong>Phase 4 - Future Work:</strong> Ensemble methods could potentially further improve performance</li>
+        </ul>
+
+        <div class="achievement-banner mt-4">
+            <strong>Achievement:</strong> Current Random Forest model with 21.97% MAPE successfully meets the client requirement of MAPE < 25%
+        </div>
+    </div>
+</div>
+{% endblock %}

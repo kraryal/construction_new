@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Cost Estimation Result</h1>
+
+<div class="card result-card mb-4">
+    <div class="card-body text-center">
+        <h2 class="mb-4">Estimated Project Cost</h2>
+        <div class="display-4 text-success">{{ result.estimated_cost }}</div>
+        
+        <div class="mt-4">
+            <p>Confidence Interval ({{ result.mape }} MAPE):</p>
+            <p class="lead">
+                <span>{{ result.lower_bound }}</span>
+                <span class="mx-2">to</span>
+                <span>{{ result.upper_bound }}</span>
+            </p>
+        </div>
+        
+        {% if input_data %}
+        <div class="mt-4">
+            <h5>Input Parameters</h5>
+            <table class="table table-sm">
+                <tr>
+                    <th>Project State:</th>
+                    <td>{{ input_data.project_state }} 
+                        {% if input_data.state_factor %}
+                        (Factor: {{ input_data.state_factor }})
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Project Type:</th>
+                    <td>{{ input_data.project_type }} 
+                        {% if input_data.type_factor %}
+                        (Factor: {{ input_data.type_factor }})
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Construction Category:</th>
+                    <td>{{ input_data.construction_category }}
+                        {% if input_data.category_factor %}
+                        (Factor: {{ input_data.category_factor }})
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Area Cost Factor:</th>
+                    <td>{{ input_data.acf }}</td>
+                </tr>
+                <tr>
+                    <th>Complexity:</th>
+                    <td>{{ input_data.complexity }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+        
+        <div class="mt-4">
+            <a href="/cost_estimator" class="btn btn-primary">Create New Estimate</a>
+            <a href="/" class="btn btn-secondary ms-2">Return to Home</a>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h3>Interpretation</h3>
+        <p>This estimate represents a Class 5 level of accuracy (conceptual stage) based on the Random Forest machine learning model with a MAPE of 21.97%.</p>
+        <p>The confidence interval represents the range where the actual cost is likely to fall based on the model's Mean Absolute Percentage Error.</p>
+        
+        <div class="alert alert-info mt-3">
+            <strong>Note:</strong> Class 5 estimates are typically used for concept screening, feasibility studies, and early project planning. As the project progresses and more detailed information becomes available, the estimate can be refined.
+        </div>
+    </div>
+</div>
+{% endblock %}

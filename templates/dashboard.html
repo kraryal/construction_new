@@ -1,0 +1,85 @@
+<!-- templates/dashboard.html -->
+{% extends "base.html" %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Performance Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<h1>Performance Dashboard</h1>
+
+<div class="row metric-cards mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <h3 class="metric-value text-success">21.97%</h3>
+                <p class="metric-label">MAPE</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <h3 class="metric-value text-info">$271,543.90</h3>
+                <p class="metric-label">RMSE</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <h3 class="metric-value text-warning">0.9463</h3>
+                <p class="metric-label">R² Score</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card">
+            <div class="card-body text-center">
+                <h3 class="metric-value text-primary">Random Forest</h3>
+                <p class="metric-label">Model Type</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card success-card mb-4">
+    <div class="card-body">
+        <h2>Excellent Performance!</h2>
+        <p>The Random Forest model is performing with 21.97% MAPE, which is well below the 25% target requirement.</p>
+        <p class="mb-0">This model also achieves an R² score of 0.9463, indicating excellent predictive power.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Learning Curve</h3>
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='images/learning_curve.png') }}" alt="Learning Curve" class="img-fluid viz-img">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h3>Residual Analysis</h3>
+                <div class="text-center">
+                    <img src="{{ url_for('static', filename='images/residual_analysis.png') }}" alt="Residual Analysis" class="img-fluid viz-img">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h3>Feature Importance</h3>
+        <div class="text-center">
+            <img src="{{ url_for('static', filename='images/feature_importance.png') }}" alt="Feature Importance" class="img-fluid viz-img">
+        </div>
+    </div>
+</div>
+{% endblock %}

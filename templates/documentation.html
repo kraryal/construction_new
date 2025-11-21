@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/custom-docs.css">
+{% endblock %}
+
+{% block content %}
+<h1 class="doc-header">Documentation</h1>
+
+<div class="row">
+    <!-- API Documentation column -->
+    <div class="col-md-6">
+        <div class="card card-custom">
+            <div class="card-header card-header-custom bg-primary text-white">
+                <h2 class="mb-0">Cost Estimation API</h2>
+            </div>
+            <div class="card-body card-body-custom">
+                <!-- Endpoint -->
+                <div class="doc-section">
+                    <h3>Endpoint</h3>
+                    <pre class="endpoint-pre"><code class="endpoint-code">POST /api/estimate</code></pre>
+                </div>
+                
+                <!-- Request Format -->
+                <div class="doc-section">
+                    <h3>Request Format</h3>
+                    <pre><code>{
+  "project_state": "GA",
+  "project_type": "Commercial",
+  "construction_category": "Office",
+  "cnt_division": 10,
+  "cnt_item_code": 100,
+  "cnt_csi_grp_unq": 20,
+  "acf": 1.0
+}</code></pre>
+                    
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Required</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>project_state</td>
+                                <td>String</td>
+                                <td>US State code (e.g., "GA", "CA")</td>
+                                <td>Yes</td>
+                            </tr>
+                            <tr>
+                                <td>project_type</td>
+                                <td>String</td>
+                                <td>Type of construction project (e.g., "Commercial")</td>
+                                <td>Yes</td>
+                            </tr>
+                            <tr>
+                                <td>construction_category</td>
+                                <td>String</td>
+                                <td>Specific construction category (e.g., "Office")</td>
+                                <td>Yes</td>
+                            </tr>
+                            <tr>
+                                <td>cnt_division</td>
+                                <td>Integer</td>
+                                <td>Number of project divisions</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td>cnt_item_code</td>
+                                <td>Integer</td>
+                                <td>Number of item codes</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td>cnt_csi_grp_unq</td>
+                                <td>Integer</td>
+                                <td>Number of unique CSI groups</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td>acf</td>
+                                <td>Float</td>
+                                <td>Area Cost Factor (0.7-1.5)</td>
+                                <td>No</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Response Format -->
+                <div class="doc-section">
+                    <h3>Response Format</h3>
+                    <pre><code>{
+  "estimated_cost": 5207578.25,
+  "confidence_interval": {
+    "low": 4063473.58,
+    "high": 6351683.00
+  },
+  "model_metrics": {
+    "mape": 21.97,
+    "rmse": 271543.90,
+    "r2": 0.9463,
+    "model_type": "Random Forest"
+  }
+}</code></pre>
+
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>estimated_cost</td>
+                                <td>Float</td>
+                                <td>The estimated project cost in USD</td>
+                            </tr>
+                            <tr>
+                                <td>confidence_interval.low</td>
+                                <td>Float</td>
+                                <td>Lower bound of the confidence interval</td>
+                            </tr>
+                            <tr>
+                                <td>confidence_interval.high</td>
+                                <td>Float</td>
+                                <td>Upper bound of the confidence interval</td>
+                            </tr>
+                            <tr>
+                                <td>model_metrics.mape</td>
+                                <td>Float</td>
+                                <td>Mean Absolute Percentage Error of the model</td>
+                            </tr>
+                            <tr>
+                                <td>model_metrics.rmse</td>
+                                <td>Float</td>
+                                <td>Root Mean Square Error of the model</td>
+                            </tr>
+                            <tr>
+                                <td>model_metrics.r2</td>
+                                <td>Float</td>
+                                <td>R-squared value (coefficient of determination)</td>
+                            </tr>
+                            <tr>
+                                <td>model_metrics.model_type</td>
+                                <td>String</td>
+                                <td>The machine learning model used for prediction</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Example API Call -->
+                <div class="doc-section">
+                    <h3>Example API Call</h3>
+                    <pre><code>curl -X POST https://example.com/api/estimate \
+-H "Content-Type: application/json" \
+-d '{
+  "project_state": "GA",
+  "project_type": "Commercial",
+  "construction_category": "Office",
+  "cnt_division": 10,
+  "cnt_item_code": 100,
+  "cnt_csi_grp_unq": 20,
+  "acf": 1.0
+}'</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Guide column -->
+    <div class="col-md-6">
+        <!-- User Guide -->
+        <div class="card card-custom">
+            <div class="card-header card-header-custom bg-success text-white">
+                <h2 class="mb-0">User Guide</h2>
+            </div>
+            <div class="card-body card-body-custom">
+                <div class="doc-section">
+                    <h3>Using the Cost Estimator</h3>
+                    <ol>
+                        <li>Navigate to the "Cost Estimator" page</li>
+                        <li>Fill in the project details:
+                            <ul>
+                                <li>Select the project state</li>
+                                <li>Choose the project type</li>
+                                <li>Select the construction category</li>
+                                <li>Enter the number of divisions</li>
+                                <li>Enter the number of item codes</li>
+                                <li>Enter the number of CSI groups</li>
+                                <li>Enter the area cost factor (ACF)</li>
+                            </ul>
+                        </li>
+                        <li>Click "Estimate Cost" to get the cost prediction</li>
+                    </ol>
+                </div>
+
+                <div class="doc-section">
+                    <h3>Interpreting Results</h3>
+                    <ul>
+                        <li><strong>Estimated Cost:</strong> The model's best prediction for the total project cost</li>
+                        <li><strong>Confidence Interval:</strong> A range in which the actual cost is likely to fall</li>
+                        <li><strong>MAPE:</strong> Mean Absolute Percentage Error - lower is better</li>
+                        <li><strong>Model Type:</strong> The type of model used for this prediction</li>
+                    </ul>
+                    
+                    <div class="info-note mt-3">
+                        <strong>Note:</strong> This estimator provides Class 5 estimates suitable for conceptual planning and feasibility studies.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final Report -->
+        <div class="card card-custom">
+            <div class="card-header card-header-custom bg-primary text-white">
+                <h2 class="mb-0">Final Project Report</h2>
+            </div>
+            <div class="card-body card-body-custom text-center">
+                <p>View our comprehensive project report with detailed methodology, data analysis, and model evaluation.</p>
+                
+                {% if 'final_report.pdf' in report_files %}
+                <a href="{{ url_for('static', filename='reports/final_report.pdf') }}" class="btn report-btn" target="_blank">
+                    View Final Report
+                </a>
+                {% else %}
+                <a href="#" class="btn report-btn">View Final Report</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model Information section -->
+<div class="card card-custom mt-4">
+    <div class="card-header card-header-custom bg-info text-white">
+        <h2 class="mb-0">Model Information</h2>
+    </div>
+    <div class="card-body card-body-custom">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="metrics-box">
+                    <h3>Random Forest Model</h3>
+                    <p>Our cost estimation model uses a Random Forest algorithm, which was selected after extensive testing and comparison with other models. Random Forests excel at handling non-linear relationships and categorical variables, making them ideal for construction cost estimation.</p>
+                    
+                    <h4>Key Performance Metrics:</h4>
+                    <div class="row mt-3">
+                        <div class="col-md-4 text-center">
+                            <div class="metric-value">{{ metrics.mape }}%</div>
+                            <div class="metric-label">MAPE</div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="metric-value">${{ "{:,.2f}".format(metrics.rmse) }}</div>
+                            <div class="metric-label">RMSE</div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="metric-value">{{ metrics.r2 }}</div>
+                            <div class="metric-label">R²</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="metrics-box">
+                    <h3>Data Sources</h3>
+                    <p>The model was trained on historical construction project data from 2010-2025, normalized to 2025 dollars. The dataset includes over 6,000 commercial, residential, and institutional projects across all 50 states.</p>
+                    
+                    <h4>Feature Importance:</h4>
+                    <ul>
+                        <li>Project State (Geographic Location)</li>
+                        <li>Construction Category</li>
+                        <li>Project Type</li>
+                        <li>Number of Divisions</li>
+                        <li>Number of Item Codes</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Team Members Section for Documentation -->
+<div class="card card-custom mt-4">
+    <div class="card-header card-header-custom bg-primary text-white">
+        <h2 class="mb-0">Project Team</h2>
+    </div>
+    <div class="card-body card-body-custom">
+        <div class="team-section">
+            <div class="row">
+                {% for member in team %}
+                <div class="col-md-4">
+                    <div class="team-card">
+                        <div class="team-avatar">
+                            {% if member.name in ['Krishna Aryal', 'Kumar Sawan'] %}
+                            <i class="bi bi-person-fill"></i>
+                            {% elif member.name == 'Neema Kafwimi' %}
+                            <i class="bi bi-person-fill-lock"></i>
+                            {% else %}
+                            <i class="bi bi-person"></i>
+                            {% endif %}
+                        </div>
+                        <div class="team-info">
+                            <h3 class="team-name">{{ member.name }}</h3>
+                            <div class="team-divider"></div>
+                            <p class="team-role">{{ member.role }}</p>
+                            <p class="team-details">{{ member.get('description', 'Georgia Institute of Technology') }}</p>
+                            <div class="team-social">
+                                <a href="#" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+                                <a href="#" title="GitHub"><i class="bi bi-github"></i></a>
+                                <a href="#" title="Email"><i class="bi bi-envelope"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

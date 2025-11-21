@@ -1,0 +1,90 @@
+<!-- templates/eda.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Enhanced Exploratory Data Analysis</h1>
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Exploratory Data Analysis</li>
+{% endblock %}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2>Dataset Overview</h2>
+        <div class="row">
+            <div class="col-md-2 mb-3">
+                <div class="stat-card">
+                    <h3>Total Projects</h3>
+                    <div class="stat-value">{{ stats.total_projects }}</div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="stat-card">
+                    <h3>Avg Cost</h3>
+                    <div class="stat-value">{{ stats.avg_cost }}</div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="stat-card">
+                    <h3>Min Cost</h3>
+                    <div class="stat-value">{{ stats.min_cost }}</div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="stat-card">
+                    <h3>Max Cost</h3>
+                    <div class="stat-value">{{ stats.max_cost }}</div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="stat-card">
+                    <h3>States</h3>
+                    <div class="stat-value">{{ stats.states }}</div>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3">
+                <div class="stat-card">
+                    <h3>Cities</h3>
+                    <div class="stat-value">{{ stats.cities }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2>Data Visualizations</h2>
+
+        <!-- 1) NEW: Cost distribution instead of lat/long cluster -->
+        <div class="mb-4">
+            <h3>Overall Cost Distribution (Normalized 2025 $)</h3>
+            <p class="text-muted">
+                Shows how project costs are spread across the dataset, highlighting typical values and outliers.
+            </p>
+            <div class="text-center">
+                <img src="{{ url_for('static', filename='images/cost_distribution.png') }}" 
+                     alt="Cost Distribution" class="img-fluid viz-img">
+            </div>
+        </div>
+        
+        <!-- 2) Keep your existing cost-by-type chart -->
+        <div class="mb-4">
+            <h3>Cost Distribution by Project Type</h3>
+            <div class="text-center">
+                <img src="{{ url_for('static', filename='images/cost_by_project_type.png') }}" 
+                     alt="Cost by Project Type" class="img-fluid viz-img">
+            </div>
+        </div>
+        
+        <!-- 3) Keep your correlation matrix (very useful for the report) -->
+        <div class="mb-4">
+            <h3>Feature Correlation Matrix</h3>
+            <div class="text-center">
+                <img src="{{ url_for('static', filename='images/correlation_matrix.png') }}" 
+                     alt="Correlation Matrix" class="img-fluid viz-img">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">Construction Cost Estimator</h2>
+    </div>
+    <div class="card-body">
+        <form action="/predict" method="post">
+            <h4 class="mb-3">Location Information</h4>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="project_state" class="form-label">Project State <span class="text-danger">*</span></label>
+                    <select class="form-select" id="project_state" name="project_state" required>
+                        <option value="" selected >Select State</option>
+                        {% for state in states %}
+                        <option value="{{ state }}">{{ state }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="area_type" class="form-label">Area Type</label>
+                    <select class="form-select" id="area_type" name="area_type">
+                        <option value="" selected>Select Area Type </option>
+                        {% for area_type in area_types %}
+                        <option value="{{ area_type }}">{{ area_type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <h4 class="mb-3 mt-4">Project Information</h4>
+<div class="row mb-3">
+    <!-- Project Type -->
+    <div class="col-md-6">
+        <label for="project_type" class="form-label">Project Type</label>
+        <select class="form-select" id="project_type" name="project_type" required>
+            <option value="" selected>Select Project Type</option>
+            {% for type in project_types %}
+            <option value="{{ type }}">{{ type }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Project Category (auto-selected) -->
+    <div class="col-md-6">
+        <label for="project_category" class="form-label">
+            Project Category <span class="text-muted">(auto-selected)</span>
+        </label>
+        <select class="form-select" id="project_category" name="project_category" required>
+            <option value="" selected>Select Category</option>
+            {% for category in project_categories %}
+            <option value="{{ category }}">{{ category }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+
+            <h4 class="mb-3 mt-4">Complexity Metrics</h4>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="cnt_division" class="form-label">Number of Divisions</label>
+                    <input type="number" class="form-control" id="cnt_division" name="cnt_division" 
+                           min="{{ div_min }}" max="{{ div_max }}" value="10" required>
+                    <div class="form-text">Range: {{ div_min }} to {{ div_max }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="cnt_item_code" class="form-label">Number of Item Codes</label>
+                    <input type="number" class="form-control" id="cnt_item_code" name="cnt_item_code" 
+                           min="{{ item_min }}" max="{{ item_max }}" value="30" required>
+                    <div class="form-text">Range: {{ item_min }} to {{ item_max }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="cnt_csi_grp_unq" class="form-label">Number of CSI Groups</label>
+                    <input type="number" class="form-control" id="cnt_csi_grp_unq" name="cnt_csi_grp_unq" 
+                           min="{{ csi_min }}" max="{{ csi_max }}" value="15" required>
+                    <div class="form-text">Range: {{ csi_min }} to {{ csi_max }}</div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="ciqs_complexity_category" class="form-label">CIQS Complexity Category</label>
+                    <select class="form-select" id="ciqs_complexity_category" name="ciqs_complexity_category">
+                        <option value="" selected >Select Complexity</option>
+                        {% for category in complexity_categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <h4 class="mb-3 mt-4">Economic Factors</h4>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="acf" class="form-label">Area Cost Factor (ACF)</label>
+                    <input type="number" class="form-control" id="acf" name="acf" 
+                           min="{{ acf_min }}" max="{{ acf_max }}" step="0.01" value="1.0" required>
+                    <div class="form-text">Typical range: {{ acf_min }} to {{ acf_max }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="cpi" class="form-label">CPI</label>
+                    <input type="number" class="form-control" id="cpi" name="cpi" 
+                           min="{{ cpi_min }}" max="{{ cpi_max }}" step="0.1" value="240.0">
+                    <div class="form-text">Range: {{ cpi_min }} to {{ cpi_max }}</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="inflation_factor" class="form-label">Inflation Factor</label>
+                    <input type="number" class="form-control" id="inflation_factor" name="inflation_factor" 
+                           min="{{ inf_min }}" max="{{ inf_max }}" step="0.01" value="1.0">
+                    <div class="form-text">Range: {{ inf_min }} to {{ inf_max }}</div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <!-- Main submit button -->
+                <button type="submit" class="btn btn-primary btn-lg">Generate Estimate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Mapping from project_type -> typical project_category, injected from Flask
+    const typeCategoryMap = {{ type_category_map | tojson | safe }};
+  
+    const typeSelect = document.getElementById('project_type');
+    const categorySelect = document.getElementById('project_category');
+  
+    typeSelect.addEventListener('change', function () {
+        const selectedType = this.value;
+        const mappedCategory = typeCategoryMap[selectedType];
+  
+        if (!mappedCategory) {
+            // no mapping (shouldn't really happen) -> reset
+            categorySelect.value = "";
+            return;
+        }
+  
+        // Set Project Category dropdown to the mapped value
+        for (let i = 0; i < categorySelect.options.length; i++) {
+            if (categorySelect.options[i].value === mappedCategory) {
+                categorySelect.selectedIndex = i;
+                break;
+            }
+        }
+    });
+  </script>
+  
+{% endblock %}

@@ -1,0 +1,74 @@
+<!-- templates/data_overview.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h1>PCS Database Schema</h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2>Database Entity Relationship Diagram</h2>
+        <p>The following diagram shows the structure of the PCS historical project database used for training the ML model:</p>
+        
+        <div class="text-center">
+            <img src="{{ url_for('static', filename='images/db.png') }}" alt="Database Schema" class="img-fluid schema-img">
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2>Key Database Tables</h2>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Projects Table</h4>
+                <ul>
+                    <li><strong>project_id</strong> (Primary Key)</li>
+                    <li><strong>project_name</strong></li>
+                    <li><strong>project_type</strong></li>
+                    <li><strong>project_category</strong></li>
+                    <li><strong>construction_category</strong></li>
+                    <li><strong>project_date</strong></li>
+                    <li><strong>project_sq_ft</strong></li>
+                    <li><strong>total_project_cost</strong></li>
+                </ul>
+            </div>
+            
+            <div class="col-md-6">
+                <h4>Location Data</h4>
+                <ul>
+                    <li><strong>project_latitude</strong></li>
+                    <li><strong>project_longitude</strong></li>
+                    <li><strong>project_city</strong></li>
+                    <li><strong>project_state</strong></li>
+                    <li><strong>county_name</strong></li>
+                    <li><strong>area_type</strong> (Urban/Rural)</li>
+                    <li><strong>acf</strong> (Area Cost Factor)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h4>Economic Factors</h4>
+                <ul>
+                    <li><strong>cpi</strong> (Consumer Price Index)</li>
+                    <li><strong>inflation_factor</strong></li>
+                    <li><strong>total_project_cost_normalized_2025</strong></li>
+                    <li><strong>official_budget_range</strong></li>
+                </ul>
+            </div>
+            
+            <div class="col-md-6">
+                <h4>Complexity Metrics</h4>
+                <ul>
+                    <li><strong>ciqs_complexity_category</strong></li>
+                    <li><strong>cnt_division</strong> (count of divisions)</li>
+                    <li><strong>cnt_item_code</strong> (count of items)</li>
+                    <li><strong>cnt_csi_grp_unq</strong> (unique CSI groups)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

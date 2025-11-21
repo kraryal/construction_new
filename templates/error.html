@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card error-card">
+        <div class="card-body text-center">
+            <h1>Error</h1>
+            <p>{{ error }}</p>
+            <div class="mt-4">
+                <a href="/cost_estimator" class="btn btn-primary">Return to Cost Estimator</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+```
+
