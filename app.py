@@ -65,8 +65,9 @@ PROJECT_INFO = {
 
 # Global variables
 model = None
-model_metrics = None
+model_metrics = {}
 df = None
+
 
 # Mapping from project_type -> typical project_category
 PROJECT_TYPE_TO_CATEGORY = {}
@@ -156,12 +157,17 @@ def get_default_row(filters):
 # Fallback model if trained model is not found
 # -------------------------------------------------------------------
 def create_dynamic_fallback_model():
-    """Create a simple fallback model using the available dataset."""
+    """
+    Create a simple fallback model using the available dataset.
 
+    This is only used when the trained model .pkl cannot be loaded.
+    It fits a small RandomForest on numeric features and returns
+    both the model and reasonable metrics.
+    """
     global df  # use already loaded dataset
 
+    # ---- Case 1: no data at all ----
     if df is None or len(df) == 0:
-        # As extreme fallback: constant median predictor
         class MedianModel:
             def __init__(self, value):
                 self.value = value
@@ -180,6 +186,7 @@ def create_dynamic_fallback_model():
 
     target_col = "total_project_cost_normalized_2025"
     if target_col not in df.columns:
+        # ---- Case 2: target column missing ----
         class MedianModel:
             def __init__(self, value):
                 self.value = value
@@ -196,7 +203,7 @@ def create_dynamic_fallback_model():
             "r2": 0.0,
         }
 
-    # Very simple fallback RF on numeric subset
+    # ---- Case 3: we have data + target → train a small RF on numeric features ----
     numeric_cols = [
         "cnt_division",
         "cnt_item_code",
@@ -211,7 +218,7 @@ def create_dynamic_fallback_model():
 
     df_model = df.dropna(subset=[target_col] + numeric_cols).copy()
     if len(df_model) < 100:
-        # not enough data
+        # Not enough clean rows → median model again, but based on actual data
         class MedianModel:
             def __init__(self, value):
                 self.value = value
@@ -219,7 +226,7 @@ def create_dynamic_fallback_model():
             def predict(self, X):
                 return np.full(shape=(len(X),), fill_value=self.value)
 
-        median_cost = df[target_col].median()
+        median_cost = float(df[target_col].median())
         print(f"{Fore.YELLOW}Insufficient clean rows. Using simple median model{Style.RESET_ALL}")
         return MedianModel(median_cost), {
             "model_type": "Median-based Fallback",
@@ -229,7 +236,7 @@ def create_dynamic_fallback_model():
         }
 
     X = df_model[numeric_cols]
-    y = df_model[target_col]
+    y = df_model[target_col].astype(float)
 
     rf = RandomForestRegressor(
         n_estimators=100,
@@ -238,9 +245,17 @@ def create_dynamic_fallback_model():
     )
     rf.fit(X, y)
 
-    mape = float((np.abs((y - rf.predict(X)) / np.maximum(y, 1))) * 100.0).mean()
-    rmse = float(np.sqrt(np.mean((y - rf.predict(X)) ** 2)))
-    r2 = float(rf.score(X, y))
+    # ---- Safe metric calculations ----
+    preds = rf.predict(X)
+
+    # percentage error
+    errors_pct = np.abs((y - preds) / np.maximum(y, 1.0)) * 100.0
+    mape = float(errors_pct.mean())
+
+    rmse = float(np.sqrt(np.mean((y - preds) ** 2)))
+
+    from sklearn.metrics import r2_score
+    r2 = float(r2_score(y, preds))
 
     metrics = {
         "model_type": "RandomForest (Fallback)",
@@ -371,14 +386,16 @@ def load_data_and_model():
         print(f"{Fore.RED}Error loading data/model: {e}{Style.RESET_ALL}")
 
     # Replace the hardcoded model with the dynamic one if needed
+        # Replace with dynamic fallback model if trained model is not available
     if model is None:
         print(
             f"{Fore.YELLOW}WARNING: Using dynamic fallback model based on "
             f"dataset patterns. Real model not found.{Style.RESET_ALL}"
         )
         fb_model, fb_metrics = create_dynamic_fallback_model()
-        globals()["model"] = fb_model
-        model_metrics.update(fb_metrics)
+        model = fb_model
+        model_metrics = fb_metrics
+
 
 
 # -------------------------------------------------------------------
