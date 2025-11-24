@@ -7,16 +7,23 @@
     </div>
     <div class="card-body">
         <div class="row">
+            <!-- Predicted cost + metrics -->
             <div class="col-md-6">
                 <div class="card mb-4">
                     <div class="card-header bg-success text-white">
                         <h4 class="mb-0">Predicted Cost</h4>
                     </div>
                     <div class="card-body text-center">
-                        <h3 class="display-4">${{ prediction | round(2) | format_number }}</h3>
-                        <p class="text-muted">90% Confidence Interval:</p>
-                        <p>${{ lower_bound | round(2) | format_number }} - ${{ upper_bound | round(2) | format_number }}</p>
-                        <div class="alert alert-info">
+                        <h3 class="display-4">
+                            ${{ prediction | round(2) | format_number }}
+                        </h3>
+                        <p class="text-muted mb-1">Approximate Range (based on MAPE):</p>
+                        <p>
+                            ${{ lower_bound | round(2) | format_number }}
+                            -
+                            ${{ upper_bound | round(2) | format_number }}
+                        </p>
+                        <div class="alert alert-info mt-3 mb-0">
                             <strong>Model: {{ model_metrics.model_type }}</strong><br>
                             MAPE: {{ model_metrics.mape | round(2) }}%<br>
                             RMSE: ${{ model_metrics.rmse | round(2) | format_number }}<br>
@@ -25,18 +32,33 @@
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Input parameters -->
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
                         <h4 class="mb-0">Input Parameters</h4>
                     </div>
                     <div class="card-body">
-                        <table class="table">
+                        {% if input_data %}
+
+                        <!-- USER INPUTS -->
+                        <h5 class="mb-2">User Inputs</h5>
+                        <table class="table table-sm">
                             <tbody>
                                 <tr>
-                                    <th>Project State</th>
+                                    <th style="width: 45%;">Project State</th>
                                     <td>{{ input_data.project_state }}</td>
+                                </tr>
+                                {% if input_data.project_city %}
+                                <tr>
+                                    <th>Project City</th>
+                                    <td>{{ input_data.project_city }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <th>Area Type</th>
+                                    <td>{{ input_data.area_type }}</td>
                                 </tr>
                                 <tr>
                                     <th>Project Type</th>
@@ -46,10 +68,24 @@
                                     <th>Project Category</th>
                                     <td>{{ input_data.project_category }}</td>
                                 </tr>
+                                {% if input_data.construction_category %}
                                 <tr>
-                                    <th>Area Type</th>
-                                    <td>{{ input_data.area_type }}</td>
+                                    <th>Construction Category</th>
+                                    <td>{{ input_data.construction_category }}</td>
                                 </tr>
+                                {% endif %}
+                                {% if input_data.official_budget_range %}
+                                <tr>
+                                    <th>Official Budget Range</th>
+                                    <td>{{ input_data.official_budget_range }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if input_data.ciqs_complexity_category %}
+                                <tr>
+                                    <th>CIQS Complexity Category</th>
+                                    <td>{{ input_data.ciqs_complexity_category }}</td>
+                                </tr>
+                                {% endif %}
                                 <tr>
                                     <th>Number of Divisions</th>
                                     <td>{{ input_data.cnt_division }}</td>
@@ -74,25 +110,70 @@
                                     <th>Inflation Factor</th>
                                     <td>{{ input_data.inflation_factor }}</td>
                                 </tr>
-                                {% if input_data.ciqs_complexity_category %}
+                            </tbody>
+                        </table>
+
+                        <!-- MODEL-DERIVED / DEFAULTS -->
+                        <h5 class="mt-3 mb-2">Model-derived & Defaults</h5>
+                        <table class="table table-sm">
+                            <tbody>
+                                {% if input_data.county_name %}
                                 <tr>
-                                    <th>CIQS Complexity Category</th>
-                                    <td>{{ input_data.ciqs_complexity_category }}</td>
+                                    <th style="width: 45%;">County (from data)</th>
+                                    <td>{{ input_data.county_name }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if input_data.region %}
+                                <tr>
+                                    <th>Region (from data)</th>
+                                    <td>{{ input_data.region }}</td>
                                 </tr>
                                 {% endif %}
                                 <tr>
                                     <th>Complexity Score</th>
-                                    <td>{{ input_data.complexity_score | round(2) }}</td>
+                                    <td>
+                                        {% if input_data.complexity_score is defined %}
+                                            {{ input_data.complexity_score | round(2) }}
+                                        {% else %}
+                                            {{ (input_data.cnt_division * input_data.cnt_item_code / (input_data.cnt_csi_grp_unq or 1)) | round(2) }}
+                                        {% endif %}
+                                    </td>
                                 </tr>
+                                {% if input_data.economic_factor is defined %}
+                                <tr>
+                                    <th>Economic Factor (CPI × Inflation)</th>
+                                    <td>{{ input_data.economic_factor | round(4) }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if input_data.project_latitude is defined %}
+                                <tr>
+                                    <th>Latitude (from data)</th>
+                                    <td>{{ input_data.project_latitude }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if input_data.project_longitude is defined %}
+                                <tr>
+                                    <th>Longitude (from data)</th>
+                                    <td>{{ input_data.project_longitude }}</td>
+                                </tr>
+                                {% endif %}
                             </tbody>
                         </table>
+
+                        {% else %}
+                        <p class="text-muted mb-0">
+                            Input details were not captured for this estimate.
+                        </p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <div class="text-center mt-4">
-            <a href="/cost_estimator" class="btn btn-primary">Make Another Estimate</a>
+            <a href="{{ url_for('cost_estimator') }}" class="btn btn-primary">
+                Make Another Estimate
+            </a>
         </div>
     </div>
 </div>

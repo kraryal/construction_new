@@ -9,11 +9,9 @@
             <h4 class="mb-3">Location Information</h4>
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="project_state" class="form-label">
-                        Project State <span class="text-danger">*</span>
-                    </label>
+                    <label for="project_state" class="form-label">Project State <span class="text-danger">*</span></label>
                     <select class="form-select" id="project_state" name="project_state" required>
-                        <option value="" selected>Select State</option>
+                        <option value="" selected >Select State</option>
                         {% for state in states %}
                         <option value="{{ state }}">{{ state }}</option>
                         {% endfor %}
@@ -22,111 +20,59 @@
                 <div class="col-md-6">
                     <label for="area_type" class="form-label">Area Type</label>
                     <select class="form-select" id="area_type" name="area_type">
-                        <option value="" selected>Select Area Type</option>
+                        <option value="" selected>Select Area Type </option>
                         {% for area_type in area_types %}
                         <option value="{{ area_type }}">{{ area_type }}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
-
-            <!-- NEW: City + County -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="project_city" class="form-label">Project City</label>
-                    <select class="form-select" id="project_city" name="project_city">
-                        <option value="" selected>Select City (optional)</option>
-                        {% for city in project_cities %}
-                        <option value="{{ city }}">{{ city }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="form-text">
-                        Optional: helps find closer “similar projects” for defaults.
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <label for="county_name" class="form-label">County</label>
-                    <select class="form-select" id="county_name" name="county_name">
-                        <option value="" selected>Select County (optional)</option>
-                        {% for county in counties %}
-                        <option value="{{ county }}">{{ county }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
             
             <h4 class="mb-3 mt-4">Project Information</h4>
-            <div class="row mb-3">
-                <!-- Project Type -->
-                <div class="col-md-6">
-                    <label for="project_type" class="form-label">Project Type</label>
-                    <select class="form-select" id="project_type" name="project_type" required>
-                        <option value="" selected>Select Project Type</option>
-                        {% for type in project_types %}
-                        <option value="{{ type }}">{{ type }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+<div class="row mb-3">
+    <!-- Project Type -->
+    <div class="col-md-6">
+        <label for="project_type" class="form-label">Project Type</label>
+        <select class="form-select" id="project_type" name="project_type" required>
+            <option value="" selected>Select Project Type</option>
+            {% for type in project_types %}
+            <option value="{{ type }}">{{ type }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-                <!-- Project Category (auto-selected) -->
-                <div class="col-md-6">
-                    <label for="project_category" class="form-label">
-                        Project Category <span class="text-muted">(auto-selected)</span>
-                    </label>
-                    <select class="form-select" id="project_category" name="project_category" required>
-                        <option value="" selected>Select Category</option>
-                        {% for category in project_categories %}
-                        <option value="{{ category }}">{{ category }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
+    <!-- Project Category (auto-selected) -->
+    <div class="col-md-6">
+        <label for="project_category" class="form-label">
+            Project Category <span class="text-muted">(auto-selected)</span>
+        </label>
+        <select class="form-select" id="project_category" name="project_category" required>
+            <option value="" selected>Select Category</option>
+            {% for category in project_categories %}
+            <option value="{{ category }}">{{ category }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
 
-            <!-- NEW: Construction Category + Budget Range -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="construction_category" class="form-label">Construction Category</label>
-                    <select class="form-select" id="construction_category" name="construction_category">
-                        <option value="" selected>Select Construction Category (optional)</option>
-                        {% for cc in construction_categories %}
-                        <option value="{{ cc }}">{{ cc }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="form-text">
-                        Example: Civil, Infrastructure & Landscaping
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <label for="official_budget_range" class="form-label">Official Budget Range</label>
-                    <select class="form-select" id="official_budget_range" name="official_budget_range">
-                        <option value="" selected>Use typical from data (default)</option>
-                        {% for br in budget_ranges %}
-                        <option value="{{ br }}">{{ br }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="form-text">
-                        Leave blank to use the most common range for similar projects.
-                    </div>
-                </div>
-            </div>
 
             <h4 class="mb-3 mt-4">Complexity Metrics</h4>
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="cnt_division" class="form-label">Number of Divisions</label>
-                    <input type="number" class="form-control" id="cnt_division" name="cnt_division"
+                    <input type="number" class="form-control" id="cnt_division" name="cnt_division" 
                            min="{{ div_min }}" max="{{ div_max }}" value="10" required>
                     <div class="form-text">Range: {{ div_min }} to {{ div_max }}</div>
                 </div>
                 <div class="col-md-4">
                     <label for="cnt_item_code" class="form-label">Number of Item Codes</label>
-                    <input type="number" class="form-control" id="cnt_item_code" name="cnt_item_code"
+                    <input type="number" class="form-control" id="cnt_item_code" name="cnt_item_code" 
                            min="{{ item_min }}" max="{{ item_max }}" value="30" required>
                     <div class="form-text">Range: {{ item_min }} to {{ item_max }}</div>
                 </div>
                 <div class="col-md-4">
                     <label for="cnt_csi_grp_unq" class="form-label">Number of CSI Groups</label>
-                    <input type="number" class="form-control" id="cnt_csi_grp_unq" name="cnt_csi_grp_unq"
+                    <input type="number" class="form-control" id="cnt_csi_grp_unq" name="cnt_csi_grp_unq" 
                            min="{{ csi_min }}" max="{{ csi_max }}" value="15" required>
                     <div class="form-text">Range: {{ csi_min }} to {{ csi_max }}</div>
                 </div>
@@ -136,7 +82,7 @@
                 <div class="col-md-6">
                     <label for="ciqs_complexity_category" class="form-label">CIQS Complexity Category</label>
                     <select class="form-select" id="ciqs_complexity_category" name="ciqs_complexity_category">
-                        <option value="" selected>Select Complexity</option>
+                        <option value="" selected >Select Complexity</option>
                         {% for category in complexity_categories %}
                         <option value="{{ category }}">{{ category }}</option>
                         {% endfor %}
@@ -148,19 +94,19 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="acf" class="form-label">Area Cost Factor (ACF)</label>
-                    <input type="number" class="form-control" id="acf" name="acf"
+                    <input type="number" class="form-control" id="acf" name="acf" 
                            min="{{ acf_min }}" max="{{ acf_max }}" step="0.01" value="1.0" required>
                     <div class="form-text">Typical range: {{ acf_min }} to {{ acf_max }}</div>
                 </div>
                 <div class="col-md-4">
                     <label for="cpi" class="form-label">CPI</label>
-                    <input type="number" class="form-control" id="cpi" name="cpi"
+                    <input type="number" class="form-control" id="cpi" name="cpi" 
                            min="{{ cpi_min }}" max="{{ cpi_max }}" step="0.1" value="240.0">
                     <div class="form-text">Range: {{ cpi_min }} to {{ cpi_max }}</div>
                 </div>
                 <div class="col-md-4">
                     <label for="inflation_factor" class="form-label">Inflation Factor</label>
-                    <input type="number" class="form-control" id="inflation_factor" name="inflation_factor"
+                    <input type="number" class="form-control" id="inflation_factor" name="inflation_factor" 
                            min="{{ inf_min }}" max="{{ inf_max }}" step="0.01" value="1.0">
                     <div class="form-text">Range: {{ inf_min }} to {{ inf_max }}</div>
                 </div>
@@ -199,5 +145,6 @@
             }
         }
     });
-</script>
+  </script>
+  
 {% endblock %}

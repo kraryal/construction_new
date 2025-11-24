@@ -283,9 +283,10 @@ def load_data_and_model():
         df_ = pd.read_csv(DATA_PATH, low_memory=False)
         print(f"Dataset shape: {df_.shape}")
 
-        # --- Create 'region' similar to notebook ---
+        # --- Ensure 'region' column, but do NOT overwrite if it already exists ---
         if (
-            "project_state" in df_.columns
+            "region" not in df_.columns
+            and "project_state" in df_.columns
             and "project_latitude" in df_.columns
             and "project_longitude" in df_.columns
         ):
@@ -314,6 +315,7 @@ def load_data_and_model():
 
                 df_["region"] = df_["project_state"].map(state_to_region)
                 print(f"Created {optimal_k} geographic regions.")
+
 
         # Assign globals
         df = df_
@@ -495,10 +497,11 @@ def cost_estimator():
         try:
             df = pd.read_csv(DATA_PATH)
             print(f"[cost_estimator] Loaded df from {DATA_PATH}, shape={df.shape}")
-            df_local = df
         except Exception as e:
             print(f"[cost_estimator] ERROR loading DATA_PATH: {e}")
             df_local = None
+        else:
+            df_local = df
     else:
         df_local = df
 
@@ -514,19 +517,9 @@ def cost_estimator():
     area_types = unique_values("area_type")
     complexity_categories = unique_values("ciqs_complexity_category")
 
-    # NEW: more categorical lists
-    project_cities = unique_values("project_city")
-    counties = unique_values("county_name")
-    construction_categories = unique_values("construction_category")
-    budget_ranges = unique_values("official_budget_range")
-
     # Build mapping: project_type -> MOST COMMON project_category
     type_category_map = {}
-    if (
-        df_local is not None
-        and "project_type" in df_local.columns
-        and "project_category" in df_local.columns
-    ):
+    if df_local is not None and "project_type" in df_local.columns and "project_category" in df_local.columns:
         type_category_map = (
             df_local.dropna(subset=["project_type", "project_category"])
                     .groupby("project_type")["project_category"]
@@ -541,10 +534,6 @@ def cost_estimator():
         project_categories=project_categories,
         area_types=area_types,
         complexity_categories=complexity_categories,
-        project_cities=project_cities,
-        counties=counties,
-        construction_categories=construction_categories,
-        budget_ranges=budget_ranges,
         csi_min=int(CSI_RANGE[0]),
         csi_max=int(CSI_RANGE[1]),
         div_min=int(DIV_RANGE[0]),
@@ -557,7 +546,7 @@ def cost_estimator():
         cpi_max=round(CPI_RANGE[1], 2),
         inf_min=round(INFLATION_RANGE[0], 2),
         inf_max=round(INFLATION_RANGE[1], 2),
-        type_category_map=type_category_map,   # for JS auto-category
+        type_category_map=type_category_map,   # <- important for JS
     )
 
 
@@ -565,6 +554,8 @@ def cost_estimator():
 @app.route("/predict", methods=["POST"])
 def predict():
     """Handle form submission and make prediction."""
+    official_budget_range_form = request.form.get("official_budget_range", "").strip()
+
     try:
         project_state = request.form.get("project_state", "")
         project_type = request.form.get("project_type", "")
@@ -573,10 +564,6 @@ def predict():
         county_name = request.form.get("county_name", "")
         project_city = request.form.get("project_city", "")
         ciqs_cat = request.form.get("ciqs_complexity_category", "")
-
-        # Allow user to pass construction_category and budget_range
-        construction_category_form = request.form.get("construction_category", "").strip()
-        official_budget_range_form = request.form.get("official_budget_range", "").strip()
 
         # Resolve project_category from project_type if we have a mapping
         project_category = PROJECT_TYPE_TO_CATEGORY.get(project_type, project_category_form)
@@ -594,7 +581,7 @@ def predict():
         if not area_type:
             area_type = defaults.get("area_type", area_type)
 
-        # Helper: parse form or use default
+        # Allow user to override defaults if they provided numbers
         def parse_or_default(name, cast, fallback_key):
             raw = request.form.get(name, "").strip()
             if raw == "":
@@ -606,23 +593,35 @@ def predict():
 
         cnt_division = parse_or_default("cnt_division", int, "cnt_division")
         cnt_item_code = parse_or_default("cnt_item_code", int, "cnt_item_code")
-        cnt_csi_grp_unq = parse_or_default("cnt_csi_grp_unq", int, "cnt_csi_grp_unq")
+        cnt_csi_grp_unq = parse_or_default(
+            "cnt_csi_grp_unq", int, "cnt_csi_grp_unq"
+        )
         acf = parse_or_default("acf", float, "acf")
         cpi = parse_or_default("cpi", float, "cpi")
-        inflation_factor = parse_or_default("inflation_factor", float, "inflation_factor")
+        inflation_factor = parse_or_default(
+            "inflation_factor", float, "inflation_factor"
+        )
 
-        # Categorical defaults, with user override if provided
-        official_budget_range = official_budget_range_form or defaults["official_budget_range"]
-        construction_category = construction_category_form or defaults["construction_category"]
+        # Categorical values: use user input if provided, otherwise defaults
+        official_budget_range = (
+            official_budget_range_form or defaults["official_budget_range"]
+        )
+        construction_category_form = request.form.get("construction_category", "").strip()
+        construction_category = (
+            construction_category_form or defaults["construction_category"]
+        )
+
 
         # Region: use region column if present
         if "region" in df.columns:
-            region_val = df.loc[df["project_state"] == project_state, "region"].mode()
+            region_val = df.loc[
+                df["project_state"] == project_state, "region"
+            ].mode()
             region = region_val.iloc[0] if not region_val.empty else None
         else:
             region = None
 
-        # Build full input row expected by the trained pipeline
+        # Build full input row with everything (for display & engineering)
         input_data = {
             "project_state": project_state,
             "project_type": project_type,
@@ -641,7 +640,7 @@ def predict():
             "inflation_factor": inflation_factor,
         }
 
-        # Coordinates if present in df; they help the model but user doesn’t have to type them
+        # Coordinates if present
         if "project_latitude" in df.columns:
             input_data["project_latitude"] = defaults["project_latitude"]
         if "project_longitude" in df.columns:
@@ -650,15 +649,37 @@ def predict():
         if region is not None:
             input_data["region"] = region
 
-        # Engineered features expected by the model
+        # Engineered features (mostly for display; model might or might not use them)
         cnt_csi_safe = max(1, cnt_csi_grp_unq)
         input_data["complexity_score"] = cnt_division * cnt_item_code / cnt_csi_safe
         input_data["economic_factor"] = cpi * inflation_factor
 
-        df_input = pd.DataFrame([input_data])
+        # === STRICT FEATURE LIST FOR THE MODEL ===
+        MODEL_FEATURES = [
+            "inflation_factor",
+            "official_budget_range",
+            "ciqs_complexity_category",
+            "cnt_division",
+            "cnt_item_code",
+            "county_name",
+            "area_type",
+            "acf",
+            "project_type",
+            "project_category",
+            "project_state",
+            "region",
+        ]
+
+        X_input = pd.DataFrame([ {f: input_data.get(f) for f in MODEL_FEATURES} ])
+
+        # Use trained model
+        prediction = float(model.predict(X_input)[0])
+
+
 
         # Use trained model if available, otherwise fallback
         if model is None:
+            # Fallback if model not loaded
             target = df['total_project_cost_normalized_2025'] if df is not None else None
             prediction = float(target.median()) if target is not None else 0.0
             model_type = "Median-based Fallback"
@@ -668,11 +689,13 @@ def predict():
         else:
             prediction = float(model.predict(df_input)[0])
 
+            # Use safe metrics dict
             metrics = model_metrics if isinstance(model_metrics, dict) else {}
             model_type = metrics.get('model_type', 'Trained Model')
             mape = float(metrics.get('mape', 25.0))
             rmse = float(metrics.get('rmse', 300000.0))
             r2 = float(metrics.get('r2', 0.0))
+
 
         # Confidence interval based on MAPE
         lower_bound = prediction * (1 - mape / 100.0)
@@ -689,16 +712,16 @@ def predict():
                 "rmse": rmse,
                 "r2": r2,
             },
-            input_data=input_data,   # <-- THIS is what the template will use
+            input_data=input_data,
         )
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return render_template(
             "error.html", message=f"Error making prediction: {str(e)}"
         )
-
 
 
 @app.route("/api/estimate", methods=["POST"])
