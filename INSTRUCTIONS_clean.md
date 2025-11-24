@@ -46,7 +46,7 @@ Using a virtual environment avoids package conflicts with other projects.
 ### Windows (PowerShell)
 
 ```powershell
-python -m venv venv
+py -3.12 -m venv venv
 venv\Scripts\activate
 ```
 
