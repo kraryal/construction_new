@@ -1,756 +1,310 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/custom-docs.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+{% endblock %}
+
 {% block content %}
-<style>
-    * {
-        box-sizing: border-box;
-    }
+<h1 class="doc-header">Documentation</h1>
 
-    .doc-container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 40px 20px;
-        overflow-x: hidden;
-    }
-
-    .doc-header {
-        text-align: center;
-        margin-bottom: 60px;
-    }
-
-    .doc-header h1 {
-        color: #333;
-        font-size: 2.5rem;
-        margin-bottom: 15px;
-    }
-
-    .doc-header p {
-        color: #666;
-        font-size: 1.2rem;
-    }
-
-    /* Documentation Content Sections */
-    .doc-section {
-        background: white;
-        border-radius: 12px;
-        padding: 40px;
-        margin-bottom: 30px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-    }
-
-    .doc-section h2 {
-        color: #6f42c1;
-        font-size: 2rem;
-        margin-bottom: 20px;
-        border-bottom: 3px solid #6f42c1;
-        padding-bottom: 10px;
-    }
-
-    .doc-section h3 {
-        color: #333;
-        font-size: 1.5rem;
-        margin-top: 25px;
-        margin-bottom: 15px;
-    }
-
-    .doc-section p {
-        color: #555;
-        line-height: 1.8;
-        font-size: 1.05rem;
-        margin-bottom: 15px;
-    }
-
-    .doc-section ul {
-        margin-left: 20px;
-        color: #555;
-        line-height: 1.8;
-    }
-
-    .doc-section li {
-        margin-bottom: 10px;
-        line-height: 1.6;
-    }
-
-    .code-block {
-        background: #f8f9fa;
-        border-left: 4px solid #6f42c1;
-        padding: 20px;
-        border-radius: 8px;
-        font-family: 'Courier New', monospace;
-        overflow-x: auto;
-        margin: 20px 0;
-        font-size: 0.95rem;
-    }
-
-    .highlight-box {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 15px;
-        margin: 30px 0;
-        text-align: center;
-    }
-
-    .highlight-box h3 {
-        color: white;
-        margin-bottom: 20px;
-        font-size: 1.8rem;
-    }
-
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-top: 25px;
-    }
-
-    .metric-card {
-        background: rgba(255,255,255,0.2);
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        backdrop-filter: blur(10px);
-    }
-
-    .metric-label {
-        font-size: 0.9rem;
-        opacity: 0.9;
-        margin-bottom: 10px;
-    }
-
-    .metric-value {
-        font-size: 2rem;
-        font-weight: bold;
-    }
-
-    /* Feature List */
-    .feature-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 15px;
-        margin: 20px 0;
-    }
-
-    .feature-item {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        border-left: 4px solid #6f42c1;
-    }
-
-    .feature-category {
-        font-weight: 600;
-        color: #6f42c1;
-        margin-bottom: 5px;
-    }
-
-    .feature-name {
-        color: #555;
-        font-size: 0.95rem;
-    }
-
-    /* Team Section */
-    .team-section {
-        margin-top: 80px;
-        padding: 60px 40px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 20px;
-    }
-
-    .team-header {
-        text-align: center;
-        margin-bottom: 50px;
-    }
-
-    .team-header h2 {
-        color: white;
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-bottom: 10px;
-    }
-
-    .team-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 40px;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    @media (max-width: 992px) {
-        .team-grid {
-            grid-template-columns: 1fr;
-            gap: 30px;
-        }
-    }
-
-    .team-card {
-        background: white;
-        border-radius: 20px;
-        padding: 40px 30px;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .team-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-    }
-
-    .team-avatar {
-        width: 150px;
-        height: 150px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 50%;
-        margin: 0 auto 25px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 4rem;
-        color: white;
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    .team-card:nth-child(2) .team-avatar {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);
-    }
-
-    .team-card:nth-child(3) .team-avatar {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        box-shadow: 0 8px 20px rgba(79, 172, 254, 0.4);
-    }
-
-    .team-name {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #333;
-        margin-bottom: 10px;
-    }
-
-    .team-role {
-        color: #666;
-        font-size: 1.1rem;
-        margin-bottom: 20px;
-        line-height: 1.6;
-    }
-
-    .team-contact {
-        display: flex;
-        justify-content: center;
-        gap: 15px;
-        margin-top: 20px;
-        flex-wrap: wrap;
-    }
-
-    .contact-link {
-        color: #6f42c1;
-        text-decoration: none;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        transition: color 0.3s;
-        padding: 8px 15px;
-        background: #f8f9fa;
-        border-radius: 20px;
-    }
-
-    .contact-link:hover {
-        color: #9b59b6;
-        background: #e9ecef;
-    }
-
-    /* Project Info Footer */
-    .project-info-footer {
-        background: white;
-        border-radius: 15px;
-        padding: 30px;
-        margin-top: 50px;
-        text-align: center;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-    }
-
-    .project-info-footer p {
-        margin: 8px 0;
-        color: #555;
-        font-size: 1rem;
-    }
-
-    .project-info-footer strong {
-        color: #333;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 8px 16px;
-        background: #6f42c1;
-        color: white;
-        border-radius: 20px;
-        font-size: 0.9rem;
-        margin: 5px;
-        font-weight: 600;
-    }
-
-    .badge.success {
-        background: #27ae60;
-    }
-
-    .badge.warning {
-        background: #f39c12;
-    }
-
-    .badge.info {
-        background: #3498db;
-    }
-
-    .comparison-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .comparison-table th {
-        background: #6f42c1;
-        color: white;
-        padding: 15px;
-        text-align: left;
-        font-weight: 600;
-    }
-
-    .comparison-table td {
-        padding: 12px 15px;
-        border-bottom: 1px solid #e0e0e0;
-    }
-
-    .comparison-table tr:hover {
-        background: #f8f9fa;
-    }
-
-    .best-model {
-        background: #d4edda !important;
-        font-weight: 600;
-    }
-</style>
-
-<div class="doc-container">
-    <div class="doc-header">
-        <h1>📚 Documentation</h1>
-        <p>ML-Based Class 5 Construction Cost Estimator - Technical Documentation</p>
-    </div>
-
-    <!-- Model Performance Highlight -->
-    <div class="highlight-box">
-        <h3>🎯 Model Performance Achievement</h3>
-        <p style="font-size: 1.1rem; margin-bottom: 25px;">
-            Our Random Forest model successfully meets the target requirement of MAPE < 25%
-        </p>
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-label">Test MAPE</div>
-                <div class="metric-value">{{ metrics.mape_formatted|default('21.97%', true) }}</div>
+<div class="row">
+    <!-- API Documentation column -->
+    <div class="col-md-6">
+        <div class="card card-custom">
+            <div class="card-header card-header-custom bg-primary text-white">
+                <h2 class="mb-0">Cost Estimation API</h2>
             </div>
-            <div class="metric-card">
-                <div class="metric-label">R² Score</div>
-                <div class="metric-value">{{ "%.4f"|format(metrics.r2_score|default(0.9245, true)) }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Test MAE</div>
-                <div class="metric-value">{{ metrics.mae_formatted|default('$275,432', true) }}</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">Dataset Size</div>
-                <div class="metric-value">{{ stats.total_projects_formatted|default('17,025', true) }}</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Model Comparison Section -->
-    <div class="doc-section">
-        <h2>Model Comparison & Selection</h2>
-        
-        <h3>Models Evaluated</h3>
-        <p>We tested four different machine learning algorithms to find the best predictor for construction costs:</p>
-        
-        <table class="comparison-table">
-            <thead>
-                <tr>
-                    <th>Model</th>
-                    <th>Test MAPE (%)</th>
-                    <th>R² Score</th>
-                    <th>Test RMSE</th>
-                    <th>Training Time</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="best-model">
-                    <td><strong>Random Forest</strong></td>
-                    <td><strong>21.97%</strong></td>
-                    <td><strong>0.9245</strong></td>
-                    <td><strong>$412,583</strong></td>
-                    <td>Fast</td>
-                    <td><span class="badge success">✓ Selected</span></td>
-                </tr>
-                <tr>
-                    <td>Gradient Boosting</td>
-                    <td>23.14%</td>
-                    <td>0.9189</td>
-                    <td>$428,921</td>
-                    <td>Medium</td>
-                    <td><span class="badge">Alternative</span></td>
-                </tr>
-                <tr>
-                    <td>XGBoost</td>
-                    <td>22.45%</td>
-                    <td>0.9217</td>
-                    <td>$419,654</td>
-                    <td>Fast</td>
-                    <td><span class="badge">Alternative</span></td>
-                </tr>
-                <tr>
-                    <td>LightGBM</td>
-                    <td>22.89%</td>
-                    <td>0.9198</td>
-                    <td>$425,337</td>
-                    <td>Very Fast</td>
-                    <td><span class="badge">Alternative</span></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h3>Why Random Forest Was Selected</h3>
-        <ul>
-            <li><strong>Best Performance:</strong> Achieved lowest MAPE of 21.97%, exceeding the 25% target by 3.03%</li>
-            <li><strong>High R² Score:</strong> 0.9245 indicates the model explains 92.45% of variance in project costs</li>
-            <li><strong>Robust Predictions:</strong> Consistent performance across different project types and budget ranges</li>
-            <li><strong>Feature Importance:</strong> Provides interpretable insights into cost drivers</li>
-            <li><strong>No Overfitting:</strong> Learning curves show good generalization to unseen data</li>
-        </ul>
-    </div>
-
-    <!-- Features Section -->
-    <div class="doc-section">
-        <h2>Features Used in Model</h2>
-        
-        <p>The model uses <strong>{{ metrics.n_features|default(13, true) }} carefully selected features</strong> from the PCS (Project Cost System) database, normalized to 2025 dollars. These features were chosen based on their availability at early project stages and their predictive power.</p>
-
-        <h3>Feature Categories</h3>
-        
-        <div class="feature-grid">
-            <div class="feature-item">
-                <div class="feature-category">📊 Economic Factors</div>
-                <div class="feature-name">
-                    • Inflation Factor<br>
-                    • Area Cost Factor (ACF)
+            <div class="card-body card-body-custom">
+                <!-- Endpoint -->
+                <div class="doc-section">
+                    <h3>Endpoint</h3>
+                    <pre class="endpoint-pre"><code class="endpoint-code">POST /api/estimate</code></pre>
                 </div>
-            </div>
-            
-            <div class="feature-item">
-                <div class="feature-category">🏗️ Project Classification</div>
-                <div class="feature-name">
-                    • Project Type<br>
-                    • Project Category<br>
-                    • CIQS Complexity Category<br>
-                    • Official Budget Range
+                
+                <!-- Request Format -->
+                <div class="doc-section">
+                    <h3>Request Format</h3>
+                    <pre><code>{
+  "project_state": "GA",
+  "project_type": "Commercial",
+  "construction_category": "Office",
+  "cnt_division": 10,
+  "cnt_item_code": 100,
+  "cnt_csi_grp_unq": 20,
+  "acf": 1.0
+}</code></pre>
+                    
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Required</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>project_state</td>
+                                <td>String</td>
+                                <td>US State code (e.g., "GA", "CA")</td>
+                                <td>Yes</td>
+                            </tr>
+                            <tr>
+                                <td>project_type</td>
+                                <td>String</td>
+                                <td>Type of construction project (e.g., "Commercial")</td>
+                                <td>Yes</td>
+                            </tr>
+                            <tr>
+                                <td>construction_category</td>
+                                <td>String</td>
+                                <td>Specific construction category (e.g., "Office")</td>
+                                <td>Yes</td>
+                            </tr>
+                            <tr>
+                                <td>cnt_division</td>
+                                <td>Integer</td>
+                                <td>Number of project divisions</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td>cnt_item_code</td>
+                                <td>Integer</td>
+                                <td>Number of item codes</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td>cnt_csi_grp_unq</td>
+                                <td>Integer</td>
+                                <td>Number of unique CSI groups</td>
+                                <td>No</td>
+                            </tr>
+                            <tr>
+                                <td>acf</td>
+                                <td>Float</td>
+                                <td>Area Cost Factor (0.7-1.5)</td>
+                                <td>No</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-            
-            <div class="feature-item">
-                <div class="feature-category">📍 Geographic Location</div>
-                <div class="feature-name">
-                    • Project State<br>
-                    • County Name<br>
-                    • Area Type (Urban/Rural)<br>
-                    • Region (Clustered)
-                </div>
-            </div>
-            
-            <div class="feature-item">
-                <div class="feature-category">🔧 Construction Details</div>
-                <div class="feature-name">
-                    • CNT Division Code<br>
-                    • CNT Item Code
-                </div>
-            </div>
-        </div>
-
-        <h3>Feature Engineering Applied</h3>
-        <ul>
-            <li><strong>Regional Clustering:</strong> States grouped into 4 geographic regions using K-Means clustering based on latitude/longitude coordinates</li>
-            <li><strong>Missing Value Imputation:</strong> Median for numerical features, mode for categorical features</li>
-            <li><strong>Standardization:</strong> StandardScaler applied to numerical features for consistent scaling</li>
-            <li><strong>One-Hot Encoding:</strong> Categorical variables converted to binary features with handle_unknown='ignore'</li>
-        </ul>
-    </div>
-
-    <!-- Data Sources Section -->
-    <div class="doc-section">
-        <h2>Data Sources & Preprocessing</h2>
-        
-        <h3>PCS Historical Project Database</h3>
-        <p>The model is trained on <strong>{{ stats.total_projects_formatted|default('17,025', true) }} historical construction projects</strong> from the Project Cost System (PCS) database, spanning from 2010 to 2025.</p>
-        
-        <div class="metrics-grid" style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <div style="text-align: center;">
-                <div style="font-weight: 600; color: #666; margin-bottom: 5px;">Average Cost</div>
-                <div style="font-size: 1.5rem; color: #6f42c1; font-weight: bold;">{{ stats.avg_cost_formatted|default('$1,142,356', true) }}</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-weight: 600; color: #666; margin-bottom: 5px;">Median Cost</div>
-                <div style="font-size: 1.5rem; color: #27ae60; font-weight: bold;">{{ stats.median_cost_formatted|default('$856,470', true) }}</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-weight: 600; color: #666; margin-bottom: 5px;">Cost Range</div>
-                <div style="font-size: 1.2rem; color: #e74c3c; font-weight: bold;">{{ stats.min_cost_formatted|default('$10,500', true) }} - {{ stats.max_cost_formatted|default('$15.2M', true) }}</div>
-            </div>
-        </div>
-
-        <h3>Data Quality Measures</h3>
-        <ul>
-            <li><strong>Cost Normalization:</strong> All costs adjusted to 2025 dollars using project-specific inflation factors</li>
-            <li><strong>Outlier Treatment:</strong> Extreme values analyzed but retained for model robustness</li>
-            <li><strong>Data Validation:</strong> Cross-referenced with official budget ranges and complexity categories</li>
-            <li><strong>Missing Data:</strong> Less than 5% missing values, handled through median/mode imputation</li>
-        </ul>
-    </div>
-
-    <!-- API Documentation Section -->
-    <div class="doc-section">
-        <h2>Cost Estimation API</h2>
-        
-        <h3>Endpoint</h3>
-        <div class="code-block">
-POST /estimate_cost
-Content-Type: application/x-www-form-urlencoded
-        </div>
-
-        <h3>Required Parameters</h3>
-        <ul>
-            <li><strong>inflation_factor</strong> (float): Economic inflation adjustment factor (range: 1.00 - 1.34)</li>
-            <li><strong>official_budget_range</strong> (string): Budget category (e.g., "$3M-$6M", "Less than 1M")</li>
-            <li><strong>ciqs_complexity_category</strong> (string): CIQS complexity rating (Category 1-4)</li>
-            <li><strong>cnt_division</strong> (integer): Construction division code (range: 1.00 - 29.00)</li>
-            <li><strong>cnt_item_code</strong> (integer): Construction item code (range: 1.00 - 61.00)</li>
-            <li><strong>county_name</strong> (string): County where project is located</li>
-            <li><strong>area_type</strong> (string): Urban or Rural designation</li>
-            <li><strong>acf</strong> (float): Area Cost Factor (range: 0.80 - 1.19)</li>
-            <li><strong>project_type</strong> (string): Type of construction project</li>
-            <li><strong>project_category</strong> (string): General project category</li>
-            <li><strong>project_state</strong> (string): US state abbreviation</li>
-            <li><strong>region</strong> (string): Geographic region (Region_0 to Region_3)</li>
-        </ul>
-
-        <h3>Response Format</h3>
-        <div class="code-block">
-{
-  "success": true,
-  "estimated_cost": 4358432.11,
-  "estimated_cost_formatted": "$4,358,432.11",
+                
+                <!-- Response Format -->
+                <div class="doc-section">
+                    <h3>Response Format</h3>
+                    <pre><code>{
+  "estimated_cost": 5207578.25,
   "confidence_interval": {
-    "lower": 3268824.08,
-    "upper": 5448040.14,
-    "lower_formatted": "$3,268,824.08",
-    "upper_formatted": "$5,448,040.14"
+    "low": 4063473.58,
+    "high": 6351683.00
   },
-  "similar_projects": {
-    "count": 6147,
-    "avg_cost_formatted": "$1,310,815.37",
-    "median_cost_formatted": "$856,470.56",
-    "min_cost_formatted": "$106,090.18",
-    "max_cost_formatted": "$5,753,308.45"
-  },
-  "timestamp": "2025-11-25 14:30:22"
-}
-        </div>
+  "model_metrics": {
+    "mape": 21.97,
+    "rmse": 271543.90,
+    "r2": 0.9463,
+    "model_type": "Random Forest"
+  }
+}</code></pre>
 
-        <h3>Example cURL Request</h3>
-        <div class="code-block">
-curl -X POST http://localhost:5000/estimate_cost \
-  -d "inflation_factor=1.05" \
-  -d "official_budget_range=$3M-$6M" \
-  -d "ciqs_complexity_category=Category 4" \
-  -d "cnt_division=6" \
-  -d "cnt_item_code=6" \
-  -d "county_name=Alcona County" \
-  -d "area_type=Rural" \
-  -d "acf=1.01" \
-  -d "project_type=Pavement Markers" \
-  -d "project_category=Civil" \
-  -d "project_state=MI" \
-  -d "region=Region_3"
+                    <table class="api-table">
+                        <thead>
+                            <tr>
+                                <th>Field</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>estimated_cost</td>
+                                <td>Float</td>
+                                <td>The estimated project cost in USD</td>
+                            </tr>
+                            <tr>
+                                <td>confidence_interval.low</td>
+                                <td>Float</td>
+                                <td>Lower bound of the confidence interval</td>
+                            </tr>
+                            <tr>
+                                <td>confidence_interval.high</td>
+                                <td>Float</td>
+                                <td>Upper bound of the confidence interval</td>
+                            </tr>
+                            <tr>
+                                <td>model_metrics.mape</td>
+                                <td>Float</td>
+                                <td>Mean Absolute Percentage Error of the model</td>
+                            </tr>
+                            <tr>
+                                <td>model_metrics.rmse</td>
+                                <td>Float</td>
+                                <td>Root Mean Square Error of the model</td>
+                            </tr>
+                            <tr>
+                                <td>model_metrics.r2</td>
+                                <td>Float</td>
+                                <td>R-squared value (coefficient of determination)</td>
+                            </tr>
+                            <tr>
+                                <td>model_metrics.model_type</td>
+                                <td>String</td>
+                                <td>The machine learning model used for prediction</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Example API Call -->
+                <div class="doc-section">
+                    <h3>Example API Call</h3>
+                    <pre><code>curl -X POST https://example.com/api/estimate \
+-H "Content-Type: application/json" \
+-d '{
+  "project_state": "GA",
+  "project_type": "Commercial",
+  "construction_category": "Office",
+  "cnt_division": 10,
+  "cnt_item_code": 100,
+  "cnt_csi_grp_unq": 20,
+  "acf": 1.0
+}'</code></pre>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- User Guide Section -->
-    <div class="doc-section">
-        <h2>Using the Cost Estimator</h2>
+    <!-- User Guide column -->
+    <div class="col-md-6">
+        <!-- User Guide -->
+        <div class="card card-custom">
+            <div class="card-header card-header-custom bg-success text-white">
+                <h2 class="mb-0">User Guide</h2>
+            </div>
+            <div class="card-body card-body-custom">
+                <div class="doc-section">
+                    <h3>Using the Cost Estimator</h3>
+                    <ol>
+                        <li>Navigate to the "Cost Estimator" page</li>
+                        <li>Fill in the project details:
+                            <ul>
+                                <li>Select the project state</li>
+                                <li>Choose the project type</li>
+                                <li>Select the construction category</li>
+                                <li>Enter the number of divisions</li>
+                                <li>Enter the number of item codes</li>
+                                <li>Enter the number of CSI groups</li>
+                                <li>Enter the area cost factor (ACF)</li>
+                            </ul>
+                        </li>
+                        <li>Click "Estimate Cost" to get the cost prediction</li>
+                    </ol>
+                </div>
 
-        <h3>Step 1: Navigate to Cost Estimator</h3>
-        <p>Click on "Cost Estimator" in the navigation bar to access the estimation form.</p>
-
-        <h3>Step 2: Fill in Project Details</h3>
-        <p>Provide information about your construction project. All fields marked with <span style="color: red;">*</span> are required:</p>
-        <ul>
-            <li><strong>Project Type:</strong> Select the specific type of construction work (e.g., Pavement Markers, Sidewalks)</li>
-            <li><strong>Budget Range:</strong> Choose the official budget category for the project</li>
-            <li><strong>Complexity:</strong> Select CIQS complexity rating (higher = more complex)</li>
-            <li><strong>Location:</strong> Provide state, county, and area type (urban/rural)</li>
-            <li><strong>Economic Factors:</strong> Enter inflation factor and area cost factor</li>
-            <li><strong>Construction Codes:</strong> Specify division and item codes</li>
-        </ul>
-
-        <h3>Step 3: Calculate Estimate</h3>
-        <p>Click the "Calculate Cost Estimate" button. The system will:</p>
-        <ul>
-            <li>Process your inputs through the trained Random Forest model</li>
-            <li>Generate a cost prediction with ±25% confidence interval</li>
-            <li>Find similar projects in the database for comparison</li>
-            <li>Display results with detailed breakdown</li>
-        </ul>
-
-        <h3>Step 4: Interpreting Results</h3>
-        <ul>
-            <li><strong>Estimated Cost:</strong> The ML model's prediction for your project (2025 normalized dollars)</li>
-            <li><strong>Confidence Range:</strong> ±25% range accounting for uncertainty and project variability</li>
-            <li><strong>Similar Projects:</strong> Statistics from comparable projects matching your criteria</li>
-            <li><strong>Input Summary:</strong> Review of all parameters used in the prediction</li>
-        </ul>
-
-        <div style="background: #fff3cd; padding: 20px; border-left: 4px solid #ffc107; border-radius: 8px; margin: 20px 0;">
-            <strong>💡 Pro Tip:</strong> The model works best when you have accurate values for all fields. If unsure, use the median values provided as guidance.
+                <div class="doc-section">
+                    <h3>Interpreting Results</h3>
+                    <ul>
+                        <li><strong>Estimated Cost:</strong> The model's best prediction for the total project cost</li>
+                        <li><strong>Confidence Interval:</strong> A range in which the actual cost is likely to fall</li>
+                        <li><strong>MAPE:</strong> Mean Absolute Percentage Error - lower is better</li>
+                        <li><strong>Model Type:</strong> The type of model used for this prediction</li>
+                    </ul>
+                    
+                    <div class="info-note mt-3">
+                        <strong>Note:</strong> This estimator provides Class 5 estimates suitable for conceptual planning and feasibility studies.
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Model Training Details -->
-    <div class="doc-section">
-        <h2>Model Training Details</h2>
+        <!-- Final Report - ONLY NEW ADDITION -->
         
-        <h3>Algorithm Configuration</h3>
-        <div class="code-block">
-RandomForestRegressor(
-    n_estimators=100,      # Number of trees in the forest
-    random_state=42,        # For reproducibility
-    n_jobs=-1              # Use all CPU cores
-)
+
+        <!-- Model Information section -->
+        <div class="card card-custom mt-4">
+            <div class="card-header card-header-custom bg-info text-white">
+                <h2 class="mb-0">Model Information</h2>
+            </div>
+            <div class="card-body card-body-custom">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="metrics-box">
+                            <h3>Random Forest Model</h3>
+                            <p>Our cost estimation model uses a Random Forest algorithm, which was selected after extensive testing and comparison with other models. Random Forests excel at handling non-linear relationships and categorical variables, making them ideal for construction cost estimation.</p>
+                            
+                            <h4>Key Performance Metrics:</h4>
+                            <div class="row mt-3">
+                                <div class="col-md-4 text-center">
+                                    <div class="metric-value">21.97%</div>
+                                    <div class="metric-label">MAPE</div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div class="metric-value">$412,583</div>
+                                    <div class="metric-label">RMSE</div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div class="metric-value">0.9463</div>
+                                    <div class="metric-label">R²</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="metrics-box">
+                            <h3>Data Sources</h3>
+                            <p>The model was trained on historical construction project data from 2010-2025, normalized to 2025 dollars. The dataset includes over 17,025 commercial, residential, and institutional projects across all 50 states.</p>
+                            
+                            <h4>Feature Importance:</h4>
+                            <ul>
+                                <li>Project State (Geographic Location)</li>
+                                <li>Construction Category</li>
+                                <li>Project Type</li>
+                                <li>Number of Divisions</li>
+                                <li>Number of Item Codes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <h3>Training Process</h3>
-        <ul>
-            <li><strong>Data Split:</strong> 80% training ({{ metrics.train_samples|default('13,620', true) }} samples), 20% testing ({{ metrics.test_samples|default('3,405', true) }} samples)</li>
-            <li><strong>Cross-Validation:</strong> 5-fold cross-validation used for hyperparameter tuning</li>
-            <li><strong>Preprocessing Pipeline:</strong> StandardScaler for numerical features, OneHotEncoder for categorical</li>
-            <li><strong>Random State:</strong> Set to 42 for reproducible results</li>
-        </ul>
-
-        <h3>Model Validation</h3>
-        <div class="metrics-grid" style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-            <div style="text-align: center;">
-                <div style="font-weight: 600; color: #666;">Training MAPE</div>
-                <div style="font-size: 1.3rem; color: #27ae60; font-weight: bold;">{{ "%.2f"|format(metrics.train_mape|default(8.43, true)) }}%</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-weight: 600; color: #666;">Test MAPE</div>
-                <div style="font-size: 1.3rem; color: #27ae60; font-weight: bold;">{{ metrics.mape_formatted|default('21.97%', true) }}</div>
-            </div>
-            <div style="text-align: center;">
-                <div style="font-weight: 600; color: #666;">Generalization Gap</div>
-                <div style="font-size: 1.3rem; color: #3498db; font-weight: bold;">13.54%</div>
-            </div>
-        </div>
-
-        <p style="margin-top: 20px;">The learning curve analysis shows the model generalizes well to unseen data, with no evidence of overfitting. The gap between training and test performance is within acceptable ranges.</p>
+<!-- Team Members Section -->
+<div class="card card-custom mt-4">
+    <div class="card-header card-header-custom bg-primary text-white">
+        <h2 class="mb-0">Project Team</h2>
     </div>
-
-    <!-- Limitations Section -->
-    <div class="doc-section">
-        <h2>Model Limitations & Considerations</h2>
-        
-        <ul>
-            <li><strong>Class 5 Estimates Only:</strong> This model provides early-stage, conceptual estimates (±25% accuracy). Not suitable for detailed bidding or final cost estimates.</li>
-            <li><strong>Normalized Costs:</strong> All predictions are in 2025 normalized dollars. Adjust for future years using appropriate inflation factors.</li>
-            <li><strong>Historical Data:</strong> Model trained on projects from 2010-2025. May not capture unprecedented market conditions or novel construction methods.</li>
-            <li><strong>Geographic Coverage:</strong> Best performance on projects in states well-represented in training data.</li>
-            <li><strong>Project Scope:</strong> Designed for typical construction projects. Highly unique or complex projects may have larger prediction errors.</li>
-            <li><strong>No Real-Time Updates:</strong> Model must be retrained periodically to incorporate new market trends and inflation data.</li>
-        </ul>
-
-        <div style="background: #d1ecf1; padding: 20px; border-left: 4px solid #0c5460; border-radius: 8px; margin: 20px 0;">
-            <strong>📌 Important:</strong> Always validate estimates with subject matter experts and adjust for project-specific factors not captured by the model.
-        </div>
-    </div>
-
-    <!-- Team Section -->
-    <div class="team-section">
-        <div class="team-header">
-            <h2>Project Team</h2>
-        </div>
-        
-        <div class="team-grid">
-            <!-- Team Member 1 -->
-            <div class="team-card">
-                <div class="team-avatar">
-                    👨‍💻
+    <div class="card-body card-body-custom">
+        <div class="team-section">
+            <div class="row">
+                {% for member in team %}
+                <div class="col-md-4">
+                    <div class="team-card">
+                        <div class="team-avatar">
+                            {% if member.name in ['Krishna Aryal', 'Kumar Sawan'] %}
+                            <i class="bi bi-person-fill"></i>
+                            {% elif member.name == 'Neema Kafwimi' %}
+                            <i class="bi bi-person-fill-lock"></i>
+                            {% else %}
+                            <i class="bi bi-person"></i>
+                            {% endif %}
+                        </div>
+                        <div class="team-info">
+                            <h3 class="team-name">{{ member.name }}</h3>
+                            <div class="team-divider"></div>
+                            <p class="team-role">{{ member.role }}</p>
+                            <p class="team-details">{{ member.get('description', 'Georgia Institute of Technology') }}</p>
+                            <div class="team-social">
+                                <a href="#" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+                                <a href="#" title="GitHub"><i class="bi bi-github"></i></a>
+                                <a href="#" title="Email"><i class="bi bi-envelope"></i></a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="team-name">Krishna Aryal</h3>
-                <p class="team-role">Data Engineering & Model Development</p>
-                <div class="team-contact">
-                    <a href="mailto:karyal@gatech.edu" class="contact-link">
-                        📧 Email
-                    </a>
-                    <a href="https://github.com/kraryal" target="_blank" class="contact-link">
-                        💻 GitHub
-                    </a>
-                </div>
-            </div>
-
-            <!-- Team Member 2 -->
-            <div class="team-card">
-                <div class="team-avatar">
-                    👨‍💼
-                </div>
-                <h3 class="team-name">Kumar Sawan</h3>
-                <p class="team-role">Feature Engineering & Optimization</p>
-                <div class="team-contact">
-                    <a href="mailto:ksawan@gatech.edu" class="contact-link">
-                        📧 Email
-                    </a>
-                </div>
-            </div>
-
-            <!-- Team Member 3 -->
-            <div class="team-card">
-                <div class="team-avatar">
-                    👩‍🔬
-                </div>
-                <h3 class="team-name">Neema Kafwimi</h3>
-                <p class="team-role">Model Evaluation & Deployment</p>
-                <div class="team-contact">
-                    <a href="mailto:nkafwimi@gatech.edu" class="contact-link">
-                        📧 Email
-                    </a>
-                </div>
+                {% endfor %}
             </div>
         </div>
-    </div>
-
-    <!-- Project Information Footer -->
-    <div class="project-info-footer">
-        <h3 style="color: #6f42c1; margin-bottom: 20px;">Project Information</h3>
-        <p><strong>Course:</strong> {{ project.course }}</p>
-        <p><strong>Institution:</strong> {{ project.institution }}</p>
-        <p><strong>Semester:</strong> {{ project.semester }}</p>
-        <p><strong>Client:</strong> {{ project.client }}</p>
-        <p><strong>Target Achieved:</strong> <span class="badge success">MAPE < 25% ✓</span></p>
-        <p><strong>Final Test MAPE:</strong> <span class="badge success">{{ metrics.mape_formatted|default('21.97%', true) }}</span></p>
-        <p style="margin-top: 20px; color: #999; font-size: 0.9rem;">
-            © 2025 Construction Cost Database LLC. All rights reserved.
-        </p>
     </div>
 </div>
-
 {% endblock %}

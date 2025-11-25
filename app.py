@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
+import os
 import pandas as pd
 import numpy as np
 import joblib
@@ -34,6 +35,32 @@ numerical_ranges = {}
 feature_columns = []
 model_metrics = {}
 dataset_stats = {}
+
+model_metrics = {
+    'mape': 21.97,
+    'rmse': 412583.00,
+    'mae': 271543.90,
+    'r2': 0.9463
+}
+
+# Add near top of app.py with other data definitions
+team_members = [
+    {
+        'name': 'Krishna Aryal',
+        'role': 'Data Engineering & Model Development',
+        'email': 'karyal@gatech.edu'
+    },
+    {
+        'name': 'Kumar Sawan',
+        'role': 'Feature Engineering & Optimization',
+        'email': 'ksawan@gatech.edu'
+    },
+    {
+        'name': 'Neema Kafwimi',
+        'role': 'Model Evaluation & Deployment',
+        'email': 'nkafwimi@gatech.edu'
+    }
+]
 
 @app.context_processor
 def inject_global_vars():
@@ -513,10 +540,15 @@ def data_overview():
     """Data overview page"""
     return render_template('data_overview.html')
 
+# Update your documentation route
+# Update documentation route
 @app.route('/documentation')
 def documentation():
     """Documentation page"""
-    return render_template('documentation.html')
+    return render_template('documentation.html',
+                         project=PROJECT_INFO,
+                         metrics=model_metrics,
+                         team=team_members)
 
 @app.route('/api/dataset_stats')
 def api_dataset_stats():
@@ -538,6 +570,65 @@ def not_found(error):
                          error='Page not found',
                          message='The page you are looking for does not exist.'), 404
 
+
+
+@app.route('/download_report')
+def download_report():
+    """Download the final project report PDF"""
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        reports_dir = os.path.join(base_dir, 'reports')
+        
+        print(f"=== DOWNLOAD REPORT DEBUG ===")
+        print(f"Base directory: {base_dir}")
+        print(f"Reports directory: {reports_dir}")
+        print(f"Reports dir exists: {os.path.exists(reports_dir)}")
+        
+        # List all files in reports directory
+        if os.path.exists(reports_dir):
+            print(f"Files in reports directory:")
+            for f in os.listdir(reports_dir):
+                full_path = os.path.join(reports_dir, f)
+                print(f"  - {f} (size: {os.path.getsize(full_path)} bytes)")
+        
+        # Try different possible filenames
+        possible_names = [
+            'final_report.pdf',
+            'Final_report.pdf',
+            'Final_Report.pdf',
+            'FINAL_REPORT.pdf'
+        ]
+        
+        report_path = None
+        for name in possible_names:
+            test_path = os.path.join(reports_dir, name)
+            print(f"Trying: {test_path} - Exists: {os.path.exists(test_path)}")
+            if os.path.exists(test_path):
+                report_path = test_path
+                break
+        
+        if not report_path:
+            return render_template('error.html',
+                                 error='Report not found',
+                                 message=f'Could not find final_report.pdf in {reports_dir}')
+        
+        print(f"Found file at: {report_path}")
+        
+        # Send the file
+        return send_file(
+            report_path,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='final_report.pdf'
+        )
+    
+    except Exception as e:
+        print(f"ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return render_template('error.html',
+                             error='Download failed',
+                             message=str(e))
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('error.html',
