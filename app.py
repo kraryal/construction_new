@@ -1,945 +1,565 @@
-import os
-import socket
-import locale
-import joblib
-import numpy as np
+from flask import Flask, render_template, request, jsonify
 import pandas as pd
-
-from flask import (
-    Flask,
-    render_template,
-    request,
-    jsonify
-)
-
+import numpy as np
+import joblib
+import os
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
 from sklearn.cluster import KMeans
-
-try:
-    from colorama import Fore, Style, init as colorama_init
-    colorama_init(autoreset=True)
-except ImportError:
-    # Fallback if colorama is not installed
-    class Dummy:
-        def __getattr__(self, name):
-            return ""
-    Fore = Style = Dummy()
-
-
-# -------------------------------------------------------------------
-# Basic Flask + locale setup
-# -------------------------------------------------------------------
-locale.setlocale(locale.LC_ALL, "")
+import warnings
+warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'cse6748-construction-cost-estimator'
 
-
-# Template filter to format numbers nicely
-@app.template_filter("format_number")
-def format_number(value):
-    try:
-        return f"{float(value):,.2f}"
-    except Exception:
-        return value
-
-
-# -------------------------------------------------------------------
-# Paths and global variables
-# -------------------------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-MODEL_PATH = os.path.join(BASE_DIR, "models", "construction_cost_model.pkl")
-METRICS_PATH = os.path.join(BASE_DIR, "models", "model_metrics.pkl")
-DATA_PATH = os.path.join(BASE_DIR, "data", "base_data_for_model.csv")
-
-os.makedirs(os.path.join(BASE_DIR, "models"), exist_ok=True)
-
+# Project information
 PROJECT_INFO = {
-    "course": "CSE6748 - Applied Analytics Practicum",
-    "institution": "Georgia Institute of Technology",
-    "semester": "Fall 2025",
-    "client": "Construction Cost Database LLC",
-    "target_mape": "< 25%"
+    'course': 'CSE6748 - Applied Analytics Practicum',
+    'institution': 'Georgia Institute of Technology',
+    'semester': 'Fall 2025',
+    'client': 'Construction Cost Database LLC',
+    'target_mape': '< 25%'
 }
-
 
 # Global variables
 model = None
-model_metrics = {}
 df = None
+df_clean = None
+categorical_values = {}
+numerical_ranges = {}
+feature_columns = []
+model_metrics = {}
+dataset_stats = {}
 
-
-# Mapping from project_type -> typical project_category
-PROJECT_TYPE_TO_CATEGORY = {}
-
-# Valid values for categorical features
-STATE_FACTORS = {}
-TYPE_FACTORS = {}
-CATEGORY_FACTORS = {}
-
-
-DIV_RANGE = (1, 50)
-ITEM_RANGE = (1, 500)
-CSI_RANGE = (1, 150)
-ACF_RANGE = (0.5, 2.0)
-CPI_RANGE = (200, 350)
-INFLATION_RANGE = (0.8, 1.5)
-
-
-# -------------------------------------------------------------------
-# Helper: default row based on similar projects
-# -------------------------------------------------------------------
-def get_default_row(filters):
-    """
-    Given a set of high-level filters, return typical (median/mode) values
-    for the technical features needed by the model.
-
-    filters: dict like {
-        "project_state": "OH",
-        "project_type": "School",
-        "project_category": "New Construction",
-        "area_type": "Urban",
-        "county_name": "Franklin County"
-    }
-    """
-    global df
-
-    subset = df.copy()
-
-    # Apply filters step by step so it degrades gracefully
-    for col, val in filters.items():
-        if val and col in subset.columns:
-            subset = subset[subset[col] == val]
-
-    # If filters shrink too much, back off to full dataset
-    if len(subset) < 50:
-        subset = df
-
-    def med(col, fallback=None):
-        if col not in subset.columns:
-            return fallback
-        return subset[col].median()
-
-    def mode(col, fallback=None):
-        if col not in subset.columns:
-            return fallback
-        vals = subset[col].dropna()
-        if vals.empty:
-            return fallback
-        return vals.mode().iloc[0]
-
-    defaults = {}
-
-    # Technical counts
-    defaults["cnt_division"] = int(med("cnt_division", 10))
-    defaults["cnt_item_code"] = int(med("cnt_item_code", 30))
-    defaults["cnt_csi_grp_unq"] = int(med("cnt_csi_grp_unq", 15))
-
-    # Cost factors
-    defaults["acf"] = float(med("acf", 1.0))
-    defaults["cpi"] = float(med("cpi", 240.0))
-    defaults["inflation_factor"] = float(med("inflation_factor", 1.0))
-
-    # Categories that the model likes
-    defaults["official_budget_range"] = mode("official_budget_range", "Unknown")
-    defaults["construction_category"] = mode("construction_category", "Unknown")
-    # Area type that usually goes with this combination
-    defaults["area_type"] = mode("area_type", None)
-
-    # Coordinates (if present)
-    defaults["project_latitude"] = float(med("project_latitude", 0.0))
-    defaults["project_longitude"] = float(med("project_longitude", 0.0))
-
-    return defaults
-
-
-# -------------------------------------------------------------------
-# Fallback model if trained model is not found
-# -------------------------------------------------------------------
-def create_dynamic_fallback_model():
-    """
-    Create a simple fallback model using the available dataset.
-
-    This is only used when the trained model .pkl cannot be loaded.
-    It fits a small RandomForest on numeric features and returns
-    both the model and reasonable metrics.
-    """
-    global df  # use already loaded dataset
-
-    # ---- Case 1: no data at all ----
-    if df is None or len(df) == 0:
-        class MedianModel:
-            def __init__(self, value):
-                self.value = value
-
-            def predict(self, X):
-                return np.full(shape=(len(X),), fill_value=self.value)
-
-        median_cost = 1_000_000.0
-        print(f"{Fore.YELLOW}No data. Using dummy median model {median_cost}{Style.RESET_ALL}")
-        return MedianModel(median_cost), {
-            "model_type": "Median-based Fallback",
-            "mape": 25.0,
-            "rmse": 300_000.0,
-            "r2": 0.0,
-        }
-
-    target_col = "total_project_cost_normalized_2025"
-    if target_col not in df.columns:
-        # ---- Case 2: target column missing ----
-        class MedianModel:
-            def __init__(self, value):
-                self.value = value
-
-            def predict(self, X):
-                return np.full(shape=(len(X),), fill_value=self.value)
-
-        median_cost = 1_000_000.0
-        print(f"{Fore.YELLOW}Target column missing. Using dummy median model{Style.RESET_ALL}")
-        return MedianModel(median_cost), {
-            "model_type": "Median-based Fallback",
-            "mape": 25.0,
-            "rmse": 300_000.0,
-            "r2": 0.0,
-        }
-
-    # ---- Case 3: we have data + target → train a small RF on numeric features ----
-    numeric_cols = [
-        "cnt_division",
-        "cnt_item_code",
-        "cnt_csi_grp_unq",
-        "acf",
-        "cpi",
-        "inflation_factor",
-        "complexity_numeric",
-        "budget_midpoint",
-    ]
-    numeric_cols = [c for c in numeric_cols if c in df.columns]
-
-    df_model = df.dropna(subset=[target_col] + numeric_cols).copy()
-    if len(df_model) < 100:
-        # Not enough clean rows → median model again, but based on actual data
-        class MedianModel:
-            def __init__(self, value):
-                self.value = value
-
-            def predict(self, X):
-                return np.full(shape=(len(X),), fill_value=self.value)
-
-        median_cost = float(df[target_col].median())
-        print(f"{Fore.YELLOW}Insufficient clean rows. Using simple median model{Style.RESET_ALL}")
-        return MedianModel(median_cost), {
-            "model_type": "Median-based Fallback",
-            "mape": 25.0,
-            "rmse": float(df[target_col].std()),
-            "r2": 0.0,
-        }
-
-    X = df_model[numeric_cols]
-    y = df_model[target_col].astype(float)
-
-    rf = RandomForestRegressor(
-        n_estimators=100,
-        random_state=42,
-        n_jobs=-1,
-    )
-    rf.fit(X, y)
-
-    # ---- Safe metric calculations ----
-    preds = rf.predict(X)
-
-    # percentage error
-    errors_pct = np.abs((y - preds) / np.maximum(y, 1.0)) * 100.0
-    mape = float(errors_pct.mean())
-
-    rmse = float(np.sqrt(np.mean((y - preds) ** 2)))
-
-    from sklearn.metrics import r2_score
-    r2 = float(r2_score(y, preds))
-
-    metrics = {
-        "model_type": "RandomForest (Fallback)",
-        "mape": round(mape, 2),
-        "rmse": rmse,
-        "r2": round(r2, 4),
+@app.context_processor
+def inject_global_vars():
+    """Inject project info and model metrics into all templates"""
+    return {
+        'project': PROJECT_INFO,
+        'stats': dataset_stats if dataset_stats else {},
+        'metrics': model_metrics if model_metrics else {},
+        'has_data': df is not None,
+        'has_model': model is not None
     }
 
-    print(f"{Fore.YELLOW}Using dynamic fallback RandomForest model{Style.RESET_ALL}")
-    return rf, metrics
-
-
-# -------------------------------------------------------------------
-# Data/model loading
-# -------------------------------------------------------------------
-def load_data_and_model():
-    """Load dataset, model, metrics, and prepare lookup dicts."""
-    global model, model_metrics, df
-    global STATE_FACTORS, TYPE_FACTORS, CATEGORY_FACTORS
-    global COUNTY_FACTORS, AREA_TYPES, COMPLEXITY_CATEGORIES
-    global PROJECT_TYPE_TO_CATEGORY
-
+def calculate_dataset_stats():
+    """Calculate comprehensive dataset statistics"""
+    global df, dataset_stats
+    
+    if df is None:
+        return {}
+    
+    target = 'total_project_cost_normalized_2025'
+    
     try:
-        # Load data
-        df_ = pd.read_csv(DATA_PATH, low_memory=False)
-        print(f"Dataset shape: {df_.shape}")
+        stats = {
+            'total_projects': int(len(df)),
+            'total_projects_formatted': f"{len(df):,}",
+            'avg_cost': float(df[target].mean()),
+            'avg_cost_formatted': f"${df[target].mean():,.2f}",
+            'median_cost': float(df[target].median()),
+            'median_cost_formatted': f"${df[target].median():,.2f}",
+            'min_cost': float(df[target].min()),
+            'min_cost_formatted': f"${df[target].min():,.2f}",
+            'max_cost': float(df[target].max()),
+            'max_cost_formatted': f"${df[target].max():,.2f}",
+            'std_cost': float(df[target].std()),
+            'std_cost_formatted': f"${df[target].std():,.2f}"
+        }
+        
+        dataset_stats = stats
+        return stats
+    
+    except Exception as e:
+        print(f"Error calculating stats: {str(e)}")
+        return {}
 
-        # --- Create 'region' similar to notebook ---
-        if (
-            "project_state" in df_.columns
-            and "project_latitude" in df_.columns
-            and "project_longitude" in df_.columns
-        ):
-            state_coords = {}
-            for state in df_["project_state"].dropna().unique():
-                state_data = df_[df_["project_state"] == state]
-                lat = state_data["project_latitude"].median()
-                lng = state_data["project_longitude"].median()
+def load_data_and_model():
+    """Load the dataset and trained model - EXACTLY as notebook"""
+    global model, df, df_clean, categorical_values, numerical_ranges, feature_columns, model_metrics
+    
+    try:
+        print("\n" + "="*80)
+        print("ML-BASED CLASS 5 CONSTRUCTION COST ESTIMATOR")
+        print("="*80)
+        print("\nLoading and exploring the dataset...")
+        
+        # Load data
+        csv_path = 'data/base_data_for_model.csv'
+        if not os.path.exists(csv_path):
+            print(f"❌ Error: {csv_path} not found.")
+            return False
+        
+        df = pd.read_csv(csv_path, low_memory=False)
+        print(f"✅ Dataset loaded successfully: {df.shape[0]} projects with {df.shape[1]} features.")
+        
+        # Define the allowed columns (EXACTLY from notebook)
+        best_columns = [
+            'inflation_factor',
+            'total_project_cost_normalized_2025',
+            'official_budget_range',
+            'ciqs_complexity_category',
+            'cnt_division', 
+            'cnt_item_code',
+            'county_name',
+            'area_type',
+            'acf',
+            'project_latitude',
+            'project_longitude',
+            'project_type',
+            'project_category',
+            'project_state'
+        ]
+        
+        # Verify available columns
+        available_columns = [col for col in best_columns if col in df.columns]
+        print(f"\n✅ Using {len(available_columns)} available columns (out of {len(best_columns)} possible):")
+        print(f"Available columns: {', '.join(available_columns)}")
+        
+        # Define target variable
+        target = 'total_project_cost_normalized_2025'
+        
+        # Calculate dataset statistics
+        calculate_dataset_stats()
+        
+        # DATA PREPROCESSING - EXACTLY as notebook
+        print("\n" + "="*80)
+        print("DATA PREPROCESSING AND FEATURE ENGINEERING")
+        print("="*80)
+        
+        # Create a copy with only available columns
+        df_clean = df[available_columns].copy()
+        
+        # Handle missing values - EXACTLY as notebook
+        missing_before = df_clean.isnull().sum().sum()
+        for col in df_clean.columns:
+            if df_clean[col].isnull().sum() > 0:
+                if df_clean[col].dtype in ['int64', 'float64']:
+                    df_clean[col].fillna(df_clean[col].median(), inplace=True)
+                else:
+                    df_clean[col].fillna(df_clean[col].mode()[0], inplace=True)
+        
+        missing_after = df_clean.isnull().sum().sum()
+        print(f"Handled {missing_before} missing values. Remaining missing: {missing_after}")
+        
+        # FEATURE ENGINEERING - EXACTLY as notebook
+        print("\nFeature Engineering:")
+        print("1. Creating regional clusters from states and geographic coordinates")
+        
+        # Create region from states using clustering - EXACTLY as notebook
+        state_coords = {}
+        for state in df_clean['project_state'].unique():
+            if 'project_latitude' in df_clean.columns and 'project_longitude' in df_clean.columns:
+                state_data = df_clean[df_clean['project_state'] == state]
+                lat = state_data['project_latitude'].median()
+                lng = state_data['project_longitude'].median()
                 if not np.isnan(lat) and not np.isnan(lng):
                     state_coords[state] = (lat, lng)
-
-            if state_coords:
-                states = list(state_coords.keys())
-                coords = np.array([state_coords[s] for s in states])
-
-                optimal_k = min(4, len(coords))
-                kmeans = KMeans(n_clusters=optimal_k, random_state=42)
-                kmeans.fit(coords)
-
-                state_to_region = {}
-                for i, state in enumerate(states):
-                    region = kmeans.predict(
-                        np.array([state_coords[state]]).reshape(1, -1)
-                    )[0]
-                    state_to_region[state] = f"Region_{region}"
-
-                df_["region"] = df_["project_state"].map(state_to_region)
-                print(f"Created {optimal_k} geographic regions.")
-
-        # Assign globals
-        df = df_
-
-        # Fill categorical sets
-        if "project_state" in df.columns:
-            STATE_FACTORS = {
-                s: s for s in sorted(df["project_state"].dropna().unique())
-            }
         
-
-
-        # NEW: build mapping project_type -> most common project_category
-        global PROJECT_TYPE_TO_CATEGORY
-        if "project_type" in df.columns and "project_category" in df.columns:
-            PROJECT_TYPE_TO_CATEGORY = (
-                df.dropna(subset=["project_type", "project_category"])
-                  .groupby("project_type")["project_category"]
-                  .agg(lambda x: x.mode().iloc[0])
-                  .to_dict()
-            )
-            print(f"Built PROJECT_TYPE_TO_CATEGORY for {len(PROJECT_TYPE_TO_CATEGORY)} types")
-        else:
-            PROJECT_TYPE_TO_CATEGORY = {}
-            print("Warning: cannot build type→category mapping (columns missing).")
-
-        if "county_name" in df.columns:
-            COUNTY_FACTORS = {
-                c: c for c in sorted(df["county_name"].dropna().unique())
-            }
-        if "area_type" in df.columns:
-            AREA_TYPES = {
-                a: a for a in sorted(df["area_type"].dropna().unique())
-            }
-        if "ciqs_complexity_category" in df.columns:
-            COMPLEXITY_CATEGORIES = {
-                c: c
-                for c in sorted(
-                    df["ciqs_complexity_category"].dropna().unique()
-                )
-            }
-
-        # Load model
-        model = None
-        model_metrics = {}
-
-        if os.path.exists(MODEL_PATH):
+        # Only proceed with clustering if we have coordinates
+        if state_coords:
+            states = list(state_coords.keys())
+            coords = np.array([state_coords[state] for state in states])
+            
+            optimal_k = min(4, len(coords))
+            kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+            kmeans.fit(coords)
+            
+            state_to_region = {}
+            for i, state in enumerate(states):
+                region = kmeans.predict(np.array([state_coords[state]]).reshape(1, -1))[0]
+                state_to_region[state] = f"Region_{region}"
+            
+            df_clean['region'] = df_clean['project_state'].map(state_to_region)
+            print(f"✅ Created {optimal_k} geographic regions based on clustering state coordinates.")
+        
+        # Prepare features (exclude target and lat/long as in notebook)
+        features = [col for col in df_clean.columns if col not in [target, "project_latitude", "project_longitude"]]
+        feature_columns = features
+        
+        print(f"\n✅ Features to use: {features}")
+        
+        # Store categorical values for dropdowns
+        for col in features:
+            if df_clean[col].dtype == 'object':
+                unique_vals = df_clean[col].dropna().unique().tolist()
+                categorical_values[col] = sorted([str(v) for v in unique_vals])
+        
+        # Store numerical ranges
+        for col in features:
+            if df_clean[col].dtype in ['int64', 'float64']:
+                numerical_ranges[col] = {
+                    'min': float(df_clean[col].min()),
+                    'max': float(df_clean[col].max()),
+                    'mean': float(df_clean[col].mean()),
+                    'median': float(df_clean[col].median()),
+                    'std': float(df_clean[col].std())
+                }
+        
+        print(f"✅ Loaded {len(categorical_values)} categorical features")
+        print(f"✅ Loaded {len(numerical_ranges)} numerical features")
+        
+        # Load or train model
+        model_path = 'models/construction_cost_model.pkl'
+        os.makedirs('models', exist_ok=True)
+        
+        should_retrain = False
+        
+        if os.path.exists(model_path):
             try:
-                model = joblib.load(MODEL_PATH)
-                print(f"Loaded model from {MODEL_PATH}")
+                model = joblib.load(model_path)
+                print("✅ Model loaded successfully")
+                
+                metrics_path = 'models/model_metrics.json'
+                if os.path.exists(metrics_path):
+                    import json
+                    with open(metrics_path, 'r') as f:
+                        model_metrics = json.load(f)
+                        print(f"✅ Model metrics loaded: R²={model_metrics.get('r2_score', 0):.4f}")
             except Exception as e:
-                print(f"Error loading model from {MODEL_PATH}: {e}")
+                print(f"⚠️ Could not load model: {str(e)}")
+                should_retrain = True
         else:
-            print(f"Model file not found at {MODEL_PATH}")
-
-        if os.path.exists(METRICS_PATH):
-            try:
-                mm = joblib.load(METRICS_PATH)
-                if isinstance(mm, dict):
-                    model_metrics = mm
-                else:
-                    print(f"Warning: metrics file {METRICS_PATH} is not a dict; ignoring.")
-            except Exception as e:
-                print(f"Error loading metrics from {METRICS_PATH}: {e}")
-        else:
-            print(f"Metrics file not found at {METRICS_PATH}")
-
-
+            should_retrain = True
+        
+        if should_retrain:
+            print("\n🔄 Training new model...")
+            model, model_metrics = train_new_model(df_clean, features, target)
+            joblib.dump(model, model_path)
+            
+            import json
+            with open('models/model_metrics.json', 'w') as f:
+                json.dump(model_metrics, f, indent=2)
+            
+            print("✅ Model trained and saved")
+        
+        return True
+    
     except Exception as e:
-        print(f"{Fore.RED}Error loading data/model: {e}{Style.RESET_ALL}")
+        print(f"❌ Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
 
-    # Replace the hardcoded model with the dynamic one if needed
-        # Replace with dynamic fallback model if trained model is not available
-    if model is None:
-        print(
-            f"{Fore.YELLOW}WARNING: Using dynamic fallback model based on "
-            f"dataset patterns. Real model not found.{Style.RESET_ALL}"
+def train_new_model(df_clean, features, target):
+    """Train a new Random Forest model - EXACTLY as notebook"""
+    try:
+        print("\n" + "="*80)
+        print("MODEL DEVELOPMENT")
+        print("="*80)
+        
+        # Prepare features and target
+        X = df_clean[features]
+        y = df_clean[target]
+        
+        print(f"Training set preparation...")
+        print(f"Features: {features}")
+        
+        # Split data - EXACTLY as notebook
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42
         )
-        fb_model, fb_metrics = create_dynamic_fallback_model()
-        model = fb_model
-        model_metrics = fb_metrics
+        
+        print(f"Training set: {X_train.shape[0]} samples")
+        print(f"Test set: {X_test.shape[0]} samples")
+        
+        # Identify categorical and numerical features
+        categorical_cols = [col for col in X.columns if X[col].dtype == 'object']
+        numerical_cols = [col for col in X.columns if X[col].dtype in ['int64', 'float64']]
+        
+        print(f"\nCategorical features for encoding: {len(categorical_cols)}")
+        print(f"Numerical features for scaling: {len(numerical_cols)}")
+        
+        # Create preprocessing pipeline - EXACTLY as notebook
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', StandardScaler(), numerical_cols),
+                ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
+            ]
+        )
+        
+        # Create pipeline with Random Forest - EXACTLY as notebook
+        pipeline = Pipeline([
+            ('preprocessor', preprocessor),
+            ('model', RandomForestRegressor(n_estimators=100, random_state=42))
+        ])
+        
+        # Train model
+        print("\n🚀 Training Random Forest...")
+        pipeline.fit(X_train, y_train)
+        print("✅ Training completed")
+        
+        # Evaluate
+        y_train_pred = pipeline.predict(X_train)
+        y_test_pred = pipeline.predict(X_test)
+        
+        # Calculate metrics
+        from sklearn.metrics import mean_absolute_percentage_error
+        train_mape = mean_absolute_percentage_error(y_train, y_train_pred) * 100
+        test_mape = mean_absolute_percentage_error(y_test, y_test_pred) * 100
+        test_rmse = np.sqrt(mean_squared_error(y_test, y_test_pred))
+        test_r2 = r2_score(y_test, y_test_pred)
+        test_mae = mean_absolute_error(y_test, y_test_pred)
+        
+        print(f"\n{'='*80}")
+        print(f"📈 Model Performance:")
+        print(f"{'='*80}")
+        print(f"  Train MAPE:   {train_mape:.2f}%")
+        print(f"  Test MAPE:    {test_mape:.2f}%")
+        print(f"  Test R²:      {test_r2:.4f}")
+        print(f"  Test RMSE:    ${test_rmse:,.2f}")
+        print(f"  Test MAE:     ${test_mae:,.2f}")
+        print(f"{'='*80}\n")
+        
+        from datetime import datetime
+        metrics = {
+            'train_mape': float(train_mape),
+            'test_mape': float(test_mape),
+            'r2_score': float(test_r2),
+            'mae': float(test_mae),
+            'mae_formatted': f"${test_mae:,.2f}",
+            'rmse': float(test_rmse),
+            'rmse_formatted': f"${test_rmse:,.2f}",
+            'mape_formatted': f"{test_mape:.2f}%",
+            'train_samples': len(X_train),
+            'test_samples': len(X_test),
+            'features': features,
+            'n_features': len(features),
+            'trained_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        return pipeline, metrics
+    
+    except Exception as e:
+        print(f"❌ Error training: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
+def get_similar_projects(input_data):
+    """Find similar projects in the dataset"""
+    global df_clean
+    
+    if df_clean is None:
+        return {}
+    
+    target = 'total_project_cost_normalized_2025'
+    filtered_df = df_clean.copy()
+    
+    # Filter by key categorical fields
+    filter_fields = ['project_type', 'official_budget_range', 'ciqs_complexity_category']
+    
+    for field in filter_fields:
+        if field in input_data and field in df_clean.columns:
+            filtered_df = filtered_df[filtered_df[field] == input_data[field]]
+    
+    # Get statistics
+    if len(filtered_df) >= 5:
+        return {
+            'count': len(filtered_df),
+            'avg_cost': float(filtered_df[target].mean()),
+            'avg_cost_formatted': f"${filtered_df[target].mean():,.2f}",
+            'median_cost': float(filtered_df[target].median()),
+            'median_cost_formatted': f"${filtered_df[target].median():,.2f}",
+            'min_cost': float(filtered_df[target].min()),
+            'min_cost_formatted': f"${filtered_df[target].min():,.2f}",
+            'max_cost': float(filtered_df[target].max()),
+            'max_cost_formatted': f"${filtered_df[target].max():,.2f}",
+            'std_cost': float(filtered_df[target].std()),
+            'std_cost_formatted': f"${filtered_df[target].std():,.2f}",
+            'match_type': 'exact'
+        }
+    else:
+        # Use overall statistics
+        return {
+            'count': len(df_clean),
+            'avg_cost': float(df_clean[target].mean()),
+            'avg_cost_formatted': f"${df_clean[target].mean():,.2f}",
+            'median_cost': float(df_clean[target].median()),
+            'median_cost_formatted': f"${df_clean[target].median():,.2f}",
+            'min_cost': float(df_clean[target].min()),
+            'min_cost_formatted': f"${df_clean[target].min():,.2f}",
+            'max_cost': float(df_clean[target].max()),
+            'max_cost_formatted': f"${df_clean[target].max():,.2f}",
+            'std_cost': float(df_clean[target].std()),
+            'std_cost_formatted': f"${df_clean[target].std():,.2f}",
+            'match_type': 'overall'
+        }
 
+# ============= ROUTES =============
 
-# -------------------------------------------------------------------
-# Routes
-# -------------------------------------------------------------------
-@app.route("/")
+@app.route('/')
 def home():
-    # Basic stats for front page cards
-    if df is None or len(df) == 0:
-        stats = {
-            "total_projects": 0,
-            "avg_cost": 0,
-            "min_cost": 0,
-            "max_cost": 0,
-            "states": 0,
-            "cities": 0,
-        }
-    else:
-        target = df["total_project_cost_normalized_2025"]
-        stats = {
-            "total_projects": len(df),
-            "avg_cost": f"{target.mean():,.0f}",
-            "min_cost": f"{target.min():,.0f}",
-            "max_cost": f"{target.max():,.0f}",
-            "states": df["project_state"].nunique()
-            if "project_state" in df.columns
-            else 0,
-            "cities": df["project_city"].nunique()
-            if "project_city" in df.columns
-            else 0,
-        }
+    """Home page"""
+    return render_template('home.html')
 
-    return render_template("index.html", stats=stats)
-
-
-@app.route("/eda")
+@app.route('/eda')
 def eda():
-    if df is None or len(df) == 0:
-        stats = {
-            "total_projects": 0,
-            "avg_cost": 0,
-            "min_cost": 0,
-            "max_cost": 0,
-            "states": 0,
-            "cities": 0,
-        }
-    else:
-        target = df["total_project_cost_normalized_2025"]
-        stats = {
-            "total_projects": len(df),
-            "avg_cost": f"{target.mean():,.0f}",
-            "min_cost": f"{target.min():,.0f}",
-            "max_cost": f"{target.max():,.0f}",
-            "states": df["project_state"].nunique()
-            if "project_state" in df.columns
-            else 0,
-            "cities": df["project_city"].nunique()
-            if "project_city" in df.columns
-            else 0,
-        }
+    """EDA page"""
+    return render_template('eda.html')
 
-    return render_template("eda.html", stats=stats)
-
-
-@app.route("/model_comparison")
+@app.route('/model_comparison')
 def model_comparison():
-    # For now just pass model_metrics; templates can show what they need
-    comparison = model_metrics.copy()
-    return render_template("model_comparison.html", comparison=comparison)
+    """Model comparison page"""
+    return render_template('model_comparison.html')
 
-
-@app.route("/dashboard")
+@app.route('/dashboard')
 def dashboard():
-    # You can extend this as needed; passing df summary is enough for layout
-    return render_template("dashboard.html")
-
-
-@app.route("/data_overview")
-def data_overview():
-    # For schema/table overview
-    columns = []
-    if df is not None:
-        for col in df.columns:
-            columns.append(
-                {"name": col, "dtype": str(df[col].dtype)}
-            )
-    return render_template("data_overview.html", columns=columns)
-
+    """Performance dashboard page"""
+    return render_template('dashboard.html')
 
 @app.route('/cost_estimator')
 def cost_estimator():
-    """Cost estimator form page"""
-    global df
-
-    # Make sure df is loaded
-    if df is None:
-        try:
-            df = pd.read_csv(DATA_PATH)
-            print(f"[cost_estimator] Loaded df from {DATA_PATH}, shape={df.shape}")
-            df_local = df
-        except Exception as e:
-            print(f"[cost_estimator] ERROR loading DATA_PATH: {e}")
-            df_local = None
-    else:
-        df_local = df
-
-    def unique_values(col_name):
-        if df_local is not None and col_name in df_local.columns:
-            return sorted(df_local[col_name].dropna().unique())
-        return []
-
-    # Pull dropdown values directly from the dataframe
-    states = unique_values("project_state")
-    project_types = unique_values("project_type")
-    project_categories = unique_values("project_category")
-    area_types = unique_values("area_type")
-    complexity_categories = unique_values("ciqs_complexity_category")
-
-    # NEW: more categorical lists
-    project_cities = unique_values("project_city")
-    counties = unique_values("county_name")
-    construction_categories = unique_values("construction_category")
-    budget_ranges = unique_values("official_budget_range")
-
-    # Build mapping: project_type -> MOST COMMON project_category
-    type_category_map = {}
-    if (
-        df_local is not None
-        and "project_type" in df_local.columns
-        and "project_category" in df_local.columns
-    ):
-        type_category_map = (
-            df_local.dropna(subset=["project_type", "project_category"])
-                    .groupby("project_type")["project_category"]
-                    .agg(lambda s: s.mode().iloc[0])
-                    .to_dict()
-        )
-
-    return render_template(
-        "cost_estimator.html",
-        states=states,
-        project_types=project_types,
-        project_categories=project_categories,
-        area_types=area_types,
-        complexity_categories=complexity_categories,
-        project_cities=project_cities,
-        counties=counties,
-        construction_categories=construction_categories,
-        budget_ranges=budget_ranges,
-        csi_min=int(CSI_RANGE[0]),
-        csi_max=int(CSI_RANGE[1]),
-        div_min=int(DIV_RANGE[0]),
-        div_max=int(DIV_RANGE[1]),
-        item_min=int(ITEM_RANGE[0]),
-        item_max=int(ITEM_RANGE[1]),
-        acf_min=round(ACF_RANGE[0], 2),
-        acf_max=round(ACF_RANGE[1], 2),
-        cpi_min=round(CPI_RANGE[0], 2),
-        cpi_max=round(CPI_RANGE[1], 2),
-        inf_min=round(INFLATION_RANGE[0], 2),
-        inf_max=round(INFLATION_RANGE[1], 2),
-        type_category_map=type_category_map,   # for JS auto-category
-    )
-
-
-
-@app.route("/predict", methods=["POST"])
-def predict():
-    """Handle form submission and make prediction."""
-    try:
-        project_state = request.form.get("project_state", "")
-        project_type = request.form.get("project_type", "")
-        project_category_form = request.form.get("project_category", "")
-        area_type = request.form.get("area_type", "")
-        county_name = request.form.get("county_name", "")
-        project_city = request.form.get("project_city", "")
-        ciqs_cat = request.form.get("ciqs_complexity_category", "")
-
-        # Allow user to pass construction_category and budget_range
-        construction_category_form = request.form.get("construction_category", "").strip()
-        official_budget_range_form = request.form.get("official_budget_range", "").strip()
-
-        # Resolve project_category from project_type if we have a mapping
-        project_category = PROJECT_TYPE_TO_CATEGORY.get(project_type, project_category_form)
-
-        # Use high-level info to pull typical values from the dataset
-        defaults = get_default_row({
-            "project_state": project_state,
-            "project_type": project_type,
-            "project_category": project_category,
-            "area_type": area_type,
-            "county_name": county_name,
-        })
-
-        # If user did not choose area type, use typical area_type from the data
-        if not area_type:
-            area_type = defaults.get("area_type", area_type)
-
-        # Helper: parse form or use default
-        def parse_or_default(name, cast, fallback_key):
-            raw = request.form.get(name, "").strip()
-            if raw == "":
-                return defaults[fallback_key]
-            try:
-                return cast(raw)
-            except ValueError:
-                return defaults[fallback_key]
-
-        cnt_division = parse_or_default("cnt_division", int, "cnt_division")
-        cnt_item_code = parse_or_default("cnt_item_code", int, "cnt_item_code")
-        cnt_csi_grp_unq = parse_or_default("cnt_csi_grp_unq", int, "cnt_csi_grp_unq")
-        acf = parse_or_default("acf", float, "acf")
-        cpi = parse_or_default("cpi", float, "cpi")
-        inflation_factor = parse_or_default("inflation_factor", float, "inflation_factor")
-
-        # Categorical defaults, with user override if provided
-        official_budget_range = official_budget_range_form or defaults["official_budget_range"]
-        construction_category = construction_category_form or defaults["construction_category"]
-
-        # Region: use region column if present
-        if "region" in df.columns:
-            region_val = df.loc[df["project_state"] == project_state, "region"].mode()
-            region = region_val.iloc[0] if not region_val.empty else None
-        else:
-            region = None
-
-        # Build full input row expected by the trained pipeline
-        input_data = {
-            "project_state": project_state,
-            "project_type": project_type,
-            "project_category": project_category,
-            "construction_category": construction_category,
-            "project_city": project_city,
-            "county_name": county_name,
-            "area_type": area_type,
-            "official_budget_range": official_budget_range,
-            "ciqs_complexity_category": ciqs_cat,
-            "cnt_division": cnt_division,
-            "cnt_item_code": cnt_item_code,
-            "cnt_csi_grp_unq": cnt_csi_grp_unq,
-            "acf": acf,
-            "cpi": cpi,
-            "inflation_factor": inflation_factor,
-        }
-
-        # Coordinates if present in df; they help the model but user doesn’t have to type them
-        if "project_latitude" in df.columns:
-            input_data["project_latitude"] = defaults["project_latitude"]
-        if "project_longitude" in df.columns:
-            input_data["project_longitude"] = defaults["project_longitude"]
-
-        if region is not None:
-            input_data["region"] = region
-
-        # Engineered features expected by the model
-        cnt_csi_safe = max(1, cnt_csi_grp_unq)
-        input_data["complexity_score"] = cnt_division * cnt_item_code / cnt_csi_safe
-        input_data["economic_factor"] = cpi * inflation_factor
-
-        df_input = pd.DataFrame([input_data])
-
-        # Use trained model if available, otherwise fallback
-        if model is None:
-            target = df['total_project_cost_normalized_2025'] if df is not None else None
-            prediction = float(target.median()) if target is not None else 0.0
-            model_type = "Median-based Fallback"
-            mape = 25.0
-            rmse = float(target.std()) if target is not None else 0.0
-            r2 = 0.0
-        else:
-            prediction = float(model.predict(df_input)[0])
-
-            metrics = model_metrics if isinstance(model_metrics, dict) else {}
-            model_type = metrics.get('model_type', 'Trained Model')
-            mape = float(metrics.get('mape', 25.0))
-            rmse = float(metrics.get('rmse', 300000.0))
-            r2 = float(metrics.get('r2', 0.0))
-
-        # Confidence interval based on MAPE
-        lower_bound = prediction * (1 - mape / 100.0)
-        upper_bound = prediction * (1 + mape / 100.0)
-
-        return render_template(
-            "prediction.html",
-            prediction=prediction,
-            lower_bound=lower_bound,
-            upper_bound=upper_bound,
-            model_metrics={
-                "model_type": model_type,
-                "mape": mape,
-                "rmse": rmse,
-                "r2": r2,
-            },
-            input_data=input_data,   # <-- THIS is what the template will use
-        )
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return render_template(
-            "error.html", message=f"Error making prediction: {str(e)}"
-        )
-
-
-
-@app.route("/api/estimate", methods=["POST"])
-def api_estimate():
-    """JSON API for programmatic cost estimation."""
-    try:
-        data = request.get_json(force=True)
-
-        project_state = data["project_state"]
-        project_type = data["project_type"]
-        project_category_raw = data.get(
-            "project_category",
-            list(CATEGORY_FACTORS.keys())[0] if CATEGORY_FACTORS else ""
-        )
-        area_type = data.get("area_type", "")
-        county_name = data.get("county_name", "")
-        project_city = data.get("project_city", "")
-        ciqs_cat = data.get("ciqs_complexity_category", "")
-
-        # Resolve category from type if we can
-        project_category = PROJECT_TYPE_TO_CATEGORY.get(project_type, project_category_raw)
-
-        defaults = get_default_row({
-            "project_state": project_state,
-            "project_type": project_type,
-            "project_category": project_category,
-            "area_type": area_type,
-            "county_name": county_name,
-        })
-
-
-        if not area_type:
-            area_type = defaults.get("area_type", area_type)
-
-        def parse_or_default_json(key, cast, fallback_key):
-            raw = data.get(key, None)
-            if raw is None:
-                return defaults[fallback_key]
-            try:
-                return cast(raw)
-            except (ValueError, TypeError):
-                return defaults[fallback_key]
-
-        cnt_division = parse_or_default_json(
-            "cnt_division", int, "cnt_division"
-        )
-        cnt_item_code = parse_or_default_json(
-            "cnt_item_code", int, "cnt_item_code"
-        )
-        cnt_csi_grp_unq = parse_or_default_json(
-            "cnt_csi_grp_unq", int, "cnt_csi_grp_unq"
-        )
-        acf = parse_or_default_json("acf", float, "acf")
-        cpi = parse_or_default_json("cpi", float, "cpi")
-        inflation_factor = parse_or_default_json(
-            "inflation_factor", float, "inflation_factor"
-        )
-
-        official_budget_range = defaults["official_budget_range"]
-        construction_category = defaults["construction_category"]
-
-        if "region" in df.columns:
-            region_val = df.loc[
-                df["project_state"] == project_state, "region"
-            ].mode()
-            region = region_val.iloc[0] if not region_val.empty else None
-        else:
-            region = None
-
-        input_data = {
-            "project_state": project_state,
-            "project_type": project_type,
-            "project_category": project_category,
-            "construction_category": construction_category,
-            "project_city": project_city,
-            "county_name": county_name,
-            "area_type": area_type,
-            "official_budget_range": official_budget_range,
-            "ciqs_complexity_category": ciqs_cat,
-            "cnt_division": cnt_division,
-            "cnt_item_code": cnt_item_code,
-            "cnt_csi_grp_unq": cnt_csi_grp_unq,
-            "acf": acf,
-            "cpi": cpi,
-            "inflation_factor": inflation_factor,
-        }
-
-        if "project_latitude" in df.columns:
-            input_data["project_latitude"] = defaults["project_latitude"]
-        if "project_longitude" in df.columns:
-            input_data["project_longitude"] = defaults["project_longitude"]
-
-        if region is not None:
-            input_data["region"] = region
-
-        cnt_csi_safe = max(1, cnt_csi_grp_unq)
-        input_data["complexity_score"] = (
-            cnt_division * cnt_item_code / cnt_csi_safe
-        )
-        input_data["economic_factor"] = cpi * inflation_factor
-
-        df_input = pd.DataFrame([input_data])
-
-        if model is None:
-            prediction = df["total_project_cost_normalized_2025"].median()
-            model_type = "Median-based Fallback"
-            mape = 25.0
-            rmse = float(df["total_project_cost_normalized_2025"].std())
-            r2 = 0.0
-        else:
-            prediction = float(model.predict(df_input)[0])
-            model_type = model_metrics.get("model_type", "Unknown Model")
-            mape = model_metrics.get("mape", 25.0)
-            rmse = model_metrics.get("rmse", 300_000.0)
-            r2 = model_metrics.get("r2", 0.85)
-
-        lower_bound = prediction * (1 - mape / 100.0)
-        upper_bound = prediction * (1 + mape / 100.0)
-
-        return jsonify(
-            {
-                "estimated_cost": prediction,
-                "confidence_interval": {
-                    "low": lower_bound,
-                    "high": upper_bound,
-                },
-                "model_metrics": {
-                    "model_type": model_type,
-                    "mape": mape,
-                    "rmse": rmse,
-                    "r2": r2,
-                },
-            }
-        )
-
-    except Exception as e:
-        import traceback
-
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 400
-
-
-@app.route("/documentation")
-def documentation():
-    metrics = {
-        "mape": model_metrics.get("mape", 0),
-        "rmse": model_metrics.get("rmse", 0),
-        "r2": model_metrics.get("r2", 0),
-    }
-
-    team = [
-        {
-            "name": "Krishna Aryal",
-            "role": "Data Scientist / Developer",
-            "description": "Georgia Institute of Technology",
-        },
-        {
-            "name": "Kumar Sawan",
-            "role": "Data Engineer",
-            "description": "Georgia Institute of Technology",
-        },
-        {
-            "name": "Neema Kafwimi",
-            "role": "Business Analyst",
-            "description": "Georgia Institute of Technology",
-        },
-    ]
-
-    reports_dir = os.path.join(BASE_DIR, "static", "reports")
-    report_files = os.listdir(reports_dir) if os.path.isdir(reports_dir) else []
-
-    return render_template(
-        "documentation.html",
-        metrics=metrics,
-        team=team,
-        report_files=report_files,
-    )
-
-
-@app.route("/debug/factors")
-def debug_factors():
-    """Debug route to inspect categorical factor dictionaries."""
-    return jsonify(
-        {
-            "states": list(STATE_FACTORS.keys()),
-            "project_types": list(TYPE_FACTORS.keys()),
-            "project_categories": list(CATEGORY_FACTORS.keys()),
-            "counties": list(COUNTY_FACTORS.keys()),
-            "area_types": list(AREA_TYPES.keys()),
-            "complexity_categories": list(COMPLEXITY_CATEGORIES.keys()),
-        }
-    )
-
-@app.context_processor
-def inject_project():
-    # makes {{ project }} available in all templates (base.html, etc.)
-    return dict(project=PROJECT_INFO)
-
-
-# -------------------------------------------------------------------
-# Run the app
-# -------------------------------------------------------------------
-if __name__ == '__main__':
-    import os
-    import socket
-    from colorama import init, Fore, Style
+    """Cost estimation form page"""
+    if df is None or model is None:
+        return render_template('error.html', 
+                             error='System not ready',
+                             message='Dataset or model not loaded.')
     
-    init()
+    return render_template('cost_estimator.html',
+                         categorical_values=categorical_values,
+                         numerical_ranges=numerical_ranges,
+                         feature_columns=feature_columns)
 
-    # 🔹 Make sure data + factors are loaded before starting server
-    load_data_and_model()
+@app.route('/estimate_cost', methods=['POST'])
+def estimate_cost():
+    """Handle cost estimation prediction"""
+    try:
+        print("\n" + "="*60)
+        print("📝 ESTIMATION REQUEST RECEIVED")
+        print("="*60)
+        
+        if model is None:
+            print("❌ ERROR: Model not loaded")
+            return jsonify({'success': False, 'error': 'Model not loaded'}), 500
+        
+        # Get form data
+        input_data = {}
+        
+        print("\n📋 Form Data Received:")
+        for col in feature_columns:
+            value = request.form.get(col)
+            if value:
+                if col in numerical_ranges:
+                    try:
+                        input_data[col] = float(value)
+                        print(f"  ✓ {col}: {value} (numerical)")
+                    except ValueError:
+                        input_data[col] = numerical_ranges[col]['median']
+                        print(f"  ⚠ {col}: using median")
+                else:
+                    input_data[col] = value
+                    print(f"  ✓ {col}: {value} (categorical)")
+        
+        if not input_data:
+            print("❌ ERROR: No input data")
+            return jsonify({'success': False, 'error': 'No input data provided'}), 400
+        
+        # Create DataFrame
+        input_df = pd.DataFrame([input_data])
+        
+        # Fill missing columns
+        for col in feature_columns:
+            if col not in input_df.columns:
+                if col in numerical_ranges:
+                    input_df[col] = numerical_ranges[col]['median']
+                elif col in categorical_values and categorical_values[col]:
+                    input_df[col] = categorical_values[col][0]
+        
+        # Reorder columns
+        input_df = input_df[feature_columns]
+        
+        print("\n🔮 Making prediction...")
+        prediction = model.predict(input_df)[0]
+        print(f"✅ PREDICTION: ${prediction:,.2f}")
+        
+        # Get similar projects
+        similar_stats = get_similar_projects(input_data)
+        
+        from datetime import datetime
+        result = {
+            'success': True,
+            'estimated_cost': float(prediction),
+            'estimated_cost_formatted': f"${prediction:,.2f}",
+            'confidence_interval': {
+                'lower': float(prediction * 0.75),
+                'upper': float(prediction * 1.25),
+                'lower_formatted': f"${prediction * 0.75:,.2f}",
+                'upper_formatted': f"${prediction * 1.25:,.2f}"
+            },
+            'input_data': input_data,
+            'similar_projects': similar_stats,
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        print("✅ Returning result")
+        print("="*60 + "\n")
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        print(f"\n❌ ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        print("="*60 + "\n")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
-    print("Starting Construction Cost Estimator...")
-    print(f"STATE_FACTORS contains {len(STATE_FACTORS)} states")
+@app.route('/data_overview')
+def data_overview():
+    """Data overview page"""
+    return render_template('data_overview.html')
 
+@app.route('/documentation')
+def documentation():
+    """Documentation page"""
+    return render_template('documentation.html')
 
-    # Get the local IP address
-    hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
+@app.route('/api/dataset_stats')
+def api_dataset_stats():
+    """API endpoint for dataset statistics"""
+    if not dataset_stats:
+        return jsonify({'error': 'Dataset not loaded'}), 404
+    return jsonify(dataset_stats)
 
-    # Display app information with color
-    print("\n" + "=" * 60)
-    print(f"{Fore.GREEN}Construction Cost Estimator{Style.RESET_ALL}")
-    print(f"{Fore.YELLOW}CSE6748 - Applied Analytics Practicum{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}Georgia Institute of Technology{Style.RESET_ALL}")
-    print("=" * 60)
+@app.route('/api/model_metrics')
+def api_model_metrics():
+    """API endpoint for model metrics"""
+    if not model_metrics:
+        return jsonify({'error': 'Model metrics not available'}), 404
+    return jsonify(model_metrics)
 
-    # Start the Flask app
-    port = int(os.environ.get('PORT', 5000))
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('error.html', 
+                         error='Page not found',
+                         message='The page you are looking for does not exist.'), 404
 
-    print(f"\n{Fore.GREEN}Server starting...{Style.RESET_ALL}")
-    print("Access the application at:")
-    print(f"{Fore.BLUE}http://localhost:{port}/{Style.RESET_ALL}")
-    print(f"{Fore.BLUE}http://{local_ip}:{port}/{Style.RESET_ALL}")
-    print("\n" + "=" * 60)
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('error.html',
+                         error='Internal server error',
+                         message='Something went wrong. Please try again later.'), 500
 
-    print(f"{Fore.YELLOW}Useful URLs:{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}Main page:        {Style.RESET_ALL}http://localhost:{port}/")
-    print(f"{Fore.CYAN}Cost Estimator:   {Style.RESET_ALL}http://localhost:{port}/cost_estimator")
-    print(f"{Fore.CYAN}API Documentation:{Style.RESET_ALL}http://localhost:{port}/documentation")
-    print(f"{Fore.CYAN}Debug Factors:    {Style.RESET_ALL}http://localhost:{port}/debug/factors")
-    print("=" * 60)
-
-    app.run(debug=True, host='0.0.0.0', port=port)
+if __name__ == '__main__':
+    print("\n" + "="*80)
+    print("🏗️  Starting Construction Cost Estimator")
+    print("="*80 + "\n")
+    
+    if load_data_and_model():
+        print("\n" + "="*80)
+        print("✅ System Ready!")
+        print("="*80)
+        print("🌐 Access at: http://localhost:5000")
+        print("="*80 + "\n")
+        
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    else:
+        print("\n" + "="*80)
+        print("❌ Initialization failed")
+        print("="*80)
+        print("Ensure 'data/base_data_for_model.csv' exists")
+        print("="*80 + "\n")

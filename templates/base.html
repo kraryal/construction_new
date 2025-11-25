@@ -1,5 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
+    <style>
+        /* Top Navigation Bar */
+        .top-nav {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+    
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+    
+        .nav-brand {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding: 15px 0;
+            margin-right: 40px;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+    
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+    
+        .nav-menu li {
+            margin: 0;
+        }
+    
+        .nav-menu a {
+            display: block;
+            padding: 18px 20px;
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+    
+        .nav-menu a:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-bottom-color: white;
+        }
+    
+        .nav-menu a.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-bottom-color: white;
+        }
+    
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .nav-brand {
+                margin-bottom: 10px;
+            }
+            
+            .nav-menu {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .nav-menu a {
+                padding: 12px 0;
+            }
+        }
+    </style>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,49 +139,85 @@
             font-weight: bold;
         }
     </style>
+
+    <style>
+        /* ONLY Navigation Bar Styles - Nothing else */
+        .top-navbar {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            padding: 0;
+            margin: 0;
+        }
+
+        .top-navbar .container {
+            max-width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .top-navbar .brand {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 12px 20px 12px 0;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .top-navbar .nav-links {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            flex: 1;
+        }
+
+        .top-navbar .nav-links li {
+            margin: 0;
+        }
+
+        .top-navbar .nav-links a {
+            display: block;
+            padding: 12px 15px;
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .top-navbar .nav-links a:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-bottom-color: white;
+        }
+
+        .top-navbar .nav-links a.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-bottom-color: white;
+        }
+    </style>
 </head>
 
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">Construction Cost Estimator</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <!-- Adjust the order here to match your preference -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Home</a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a class="nav-link" href="/eda">EDA</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/model_comparison">Model Comparison</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/dashboard">Dashboard</a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" href="/cost_estimator">Cost Estimation</a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a class="nav-link" href="/data_overview">Data Overview</a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a class="nav-link" href="/documentation">Documentation</a>
-                    </li>
-                    
+    <nav class="top-nav">
+        <div class="top-navbar">
+            <div class="container">
+                <a href="{{ url_for('home') }}" class="brand">🏗️ ML Cost Estimator</a>
+                <ul class="nav-links">
+                    <li><a href="{{ url_for('home') }}" {% if request.endpoint == 'home' %}class="active"{% endif %}>Home</a></li>
+                    <li><a href="{{ url_for('eda') }}" {% if request.endpoint == 'eda' %}class="active"{% endif %}>EDA</a></li>
+                    <li><a href="{{ url_for('model_comparison') }}" {% if request.endpoint == 'model_comparison' %}class="active"{% endif %}>Model Comparison</a></li>
+                    <li><a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="active"{% endif %}>Dashboard</a></li>
+                    <li><a href="{{ url_for('cost_estimator') }}" {% if request.endpoint == 'cost_estimator' %}class="active"{% endif %}>Cost Estimator</a></li>
+                    <li><a href="{{ url_for('data_overview') }}" {% if request.endpoint == 'data_overview' %}class="active"{% endif %}>Data Overview</a></li>
+                    <li><a href="{{ url_for('documentation') }}" {% if request.endpoint == 'documentation' %}class="active"{% endif %}>Documentation</a></li>
                 </ul>
             </div>
         </div>
-    </nav>
+</nav>
 
     <div class="container mt-4">
         {% block content %}{% endblock %}

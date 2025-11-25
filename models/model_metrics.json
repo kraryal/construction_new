@@ -1,0 +1,28 @@
+{
+  "train_mape": 14.951626617027875,
+  "test_mape": 23.106184593336724,
+  "r2_score": 0.9350115778615665,
+  "mae": 186922.74640629266,
+  "mae_formatted": "$186,922.75",
+  "rmse": 298765.6642892535,
+  "rmse_formatted": "$298,765.66",
+  "mape_formatted": "23.11%",
+  "train_samples": 13620,
+  "test_samples": 3405,
+  "features": [
+    "inflation_factor",
+    "official_budget_range",
+    "ciqs_complexity_category",
+    "cnt_division",
+    "cnt_item_code",
+    "county_name",
+    "area_type",
+    "acf",
+    "project_type",
+    "project_category",
+    "project_state",
+    "region"
+  ],
+  "n_features": 12,
+  "trained_date": "2025-11-25 10:43:17"
+}
