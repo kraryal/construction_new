@@ -574,6 +574,9 @@ RandomForestRegressor(
 ### Dashboard
 ![Dashboard](https://via.placeholder.com/800x400/e74c3c/ffffff?text=Performance+Dashboard)
 
+### Evaluation
+![Dashboard](https://via.placeholder.com/800x400/e74c3c/ffffff?text=Performance+Dashboard)
+
 </details>
 
 ---
