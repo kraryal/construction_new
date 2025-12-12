@@ -589,20 +589,20 @@ RandomForestRegressor(
 <table>
 <tr>
 <td align="center" width="33%">
-<img src="static/images/male_avatar.png" alt="Dashboard Preview" width="50%">
+<img src="static/images/male_avatar.png" alt="Dashboard Preview" width="90%">
 <b>Krishna Aryal</b><br>
 <sub>Data Engineering & Model Development</sub><br>
 <a href="mailto:karyal@gatech.edu">📧 Email</a> •
 <a href="https://github.com/kraryal">💻 GitHub</a>
 </td>
 <td align="center" width="33%">
-<img src="static/images/male_avatar.png" alt="Dashboard Preview" width="50%">
+<img src="static/images/male_avatar.png" alt="Dashboard Preview" width="90%">
 <b>Kumar Sawan</b><br>
 <sub>Feature Engineering & Optimization</sub><br>
 <a href="mailto:ksawan@gatech.edu">📧 Email</a>
 </td>
 <td align="center" width="33%">
-<img src="static/images/female_avatar.png" alt="Dashboard Preview" width="50%">
+<img src="static/images/female_avatar.png" alt="Dashboard Preview" width="90%">
 <b>Neema Kafwimi</b><br>
 <sub>Model Evaluation & Deployment</sub><br>
 <a href="mailto:nkafwimi@gatech.edu">📧 Email</a>
