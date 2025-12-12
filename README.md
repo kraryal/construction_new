@@ -564,17 +564,25 @@ RandomForestRegressor(
 ### Home Page
 ![Home Page](<img src="static/images/01_home_page.jpg" alt="Dashboard Preview" width="100%">)
 
-### Cost Estimator
-![Cost Estimator](https://via.placeholder.com/800x400/27ae60/ffffff?text=Cost+Estimator+Form)
+### Cost Estimator Form (Empty)
+<img src="static/images/02_cost_estimator_form.jpg" alt="Cost Estimator Form" width="100%"/>
+
+*Clean input form for entering construction project details.*
+
+### Cost Estimator Form (Filled Example)
+<img src="static/images/03_cost_estimator_filled.jpg" alt="Cost Estimator Filled" width="100%"/>
+
+*Example of the form with sample data entered for cost prediction.*
 
 ### Model Comparison
-![Model Comparison](https://via.placeholder.com/800x400/3498db/ffffff?text=Model+Comparison+Table)
+<img src="static/images/04_model_comparison.jpg" alt="Model Comparison Table" width="100%"/>
 
-### Dashboard
-![Dashboard](https://via.placeholder.com/800x400/e74c3c/ffffff?text=Performance+Dashboard)
+*Comparison of different machine learning models' performance metrics.*
 
-### Evaluation
-![Dashboard](https://via.placeholder.com/800x400/e74c3c/ffffff?text=Performance+Dashboard)
+### Performance Dashboard
+<img src="static/images/05_performance_dashboard.jpg" alt="Performance Dashboard" width="100%"/>
+
+*Interactive dashboard showing key project analytics and insights.*
 
 </details>
 
