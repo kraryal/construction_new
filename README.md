@@ -589,9 +589,7 @@ RandomForestRegressor(
 <table>
 <tr>
 <td align="center" width="33%">
-<div style="width: 90px; height: 90px; background: linear-gradient(135deg, #673AB7, #9C27B0); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.15); margin: 0 auto;">
-                    <i class="bi bi-person-fill" style="font-size: 40px; color: white;"></i>
-                </div>
+<img src="static/images/male_avatar.png" alt="Dashboard Preview" width="100%">
 <img src="https://via.placeholder.com/150/7c3aed/ffffff?text=KA" width="100" style="border-radius:50%"><br>
 <b>Krishna Aryal</b><br>
 <sub>Data Engineering & Model Development</sub><br>
