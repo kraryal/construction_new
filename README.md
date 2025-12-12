@@ -273,7 +273,6 @@ python app.py
 ================================================================================
 ```
 
-📖 **Detailed Instructions:** See [INSTRUCTIONS.md](INSTRUCTIONS.md)
 
 ---
 
