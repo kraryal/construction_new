@@ -589,21 +589,20 @@ RandomForestRegressor(
 <table>
 <tr>
 <td align="center" width="33%">
-<img src="static/images/male_avatar.png" alt="Dashboard Preview" width="100%">
-<img src="https://via.placeholder.com/150/7c3aed/ffffff?text=KA" width="100" style="border-radius:50%"><br>
+<img src="static/images/male_avatar.png" alt="Dashboard Preview" width="50%">
 <b>Krishna Aryal</b><br>
 <sub>Data Engineering & Model Development</sub><br>
 <a href="mailto:karyal@gatech.edu">📧 Email</a> •
 <a href="https://github.com/kraryal">💻 GitHub</a>
 </td>
 <td align="center" width="33%">
-<img src="https://via.placeholder.com/150/ec4899/ffffff?text=KS" width="100" style="border-radius:50%"><br>
+<img src="static/images/male_avatar.png" alt="Dashboard Preview" width="50%">
 <b>Kumar Sawan</b><br>
 <sub>Feature Engineering & Optimization</sub><br>
 <a href="mailto:ksawan@gatech.edu">📧 Email</a>
 </td>
 <td align="center" width="33%">
-<img src="https://via.placeholder.com/150/06b6d4/ffffff?text=NK" width="100" style="border-radius:50%"><br>
+<img src="static/images/female_avatar.png" alt="Dashboard Preview" width="50%">
 <b>Neema Kafwimi</b><br>
 <sub>Model Evaluation & Deployment</sub><br>
 <a href="mailto:nkafwimi@gatech.edu">📧 Email</a>
