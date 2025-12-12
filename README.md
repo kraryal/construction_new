@@ -18,7 +18,7 @@
 
 ### 🎯 Achievement: **21.97% MAPE** - Exceeds Target by 3.03%
 
-<img src="https://via.placeholder.com/800x400/667eea/ffffff?text=ML+Cost+Estimator+Dashboard" alt="Dashboard Preview" width="100%">
+<img src="static/images/01_home_page.jpg" alt="Dashboard Preview" width="100%">
 
 </div>
 
