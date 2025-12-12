@@ -562,7 +562,7 @@ RandomForestRegressor(
 <summary><b>🖼️ Click to view screenshots</b></summary>
 
 ### Home Page
-![Home Page](https://via.placeholder.com/800x400/667eea/ffffff?text=Home+Page+Preview)
+![Home Page](src="static/images/01_home_page.jpg")
 
 ### Cost Estimator
 ![Cost Estimator](https://via.placeholder.com/800x400/27ae60/ffffff?text=Cost+Estimator+Form)
