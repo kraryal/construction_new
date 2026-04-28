@@ -24,6 +24,17 @@
 
 ---
 
+---
+
+### 🎯 Feedback
+
+<img src="static/images/feedback.jpg" alt="Feedback Preview" width="100%">
+
+</div>
+
+---
+
+
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
