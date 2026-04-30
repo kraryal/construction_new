@@ -569,11 +569,12 @@ RandomForestRegressor(
 
 ## 📸 Screenshots
 
-<details>
-<summary><b>🖼️ Click to view screenshots</b></summary>
+<!-- <details>
+<summary><b>🖼️ Click to view screenshots</b></summary> -->
 
 ### Home Page
-![Home Page](<img src="static/images/01_home_page.jpg" alt="Dashboard Preview" width="100%">)
+![Home Page] 
+<img  src="static/images/01_home_page.jpg" alt="Dashboard Preview" width="100%" />
 
 ### Cost Estimator Form (Empty)
 <img src="static/images/02_cost_estimator_form.jpg" alt="Cost Estimator Form" width="100%"/>
@@ -595,7 +596,7 @@ RandomForestRegressor(
 
 *Interactive dashboard showing key project analytics and insights.*
 
-</details>
+<!-- </details> -->
 
 ---
 
